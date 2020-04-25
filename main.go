@@ -9,7 +9,9 @@ import (
 	"github.com/gcla/gowid/widgets/dialog"
 	"github.com/gcla/gowid/widgets/edit"
 	"github.com/gcla/gowid/widgets/holder"
+	"github.com/gcla/gowid/widgets/pile"
 	"github.com/gcla/gowid/widgets/text"
+	"github.com/gcla/gowid/widgets/vpadding"
 	"github.com/gdamore/tcell"
 	"github.com/hrfmmr/lyco/appkeys"
 
@@ -19,11 +21,22 @@ import (
 //======================================================================
 
 var (
-	app    *gowid.App
-	err    error
-	inpute *edit.Widget
-	inputd *dialog.Widget
+	app      *gowid.App
+	err      error
+	inpute   *edit.Widget
+	inputd   *dialog.Widget
+	tasktxt  *text.Widget
+	timertxt *text.Widget
 )
+
+func init() {
+	tasktxt = text.New("", text.Options{
+		Align: gowid.HAlignMiddle{},
+	})
+	timertxt = text.New("timer", text.Options{
+		Align: gowid.HAlignMiddle{},
+	})
+}
 
 type (
 	handler struct{}
@@ -67,7 +80,9 @@ func handleEnter() appkeys.KeyInputFn {
 			if err != nil {
 				logrus.Fatal(err)
 			}
-			logrus.Infof("🐛 main#handleEnter case tcell.KeyEnter - 📝editor buf:%v", buf.String())
+			s := buf.String()
+			logrus.Infof("🐛 main#handleEnter case tcell.KeyEnter - 📝editor buf:%v", s)
+			tasktxt.SetText(s, app)
 			inputd.Close(app)
 			handled = true
 		}
@@ -79,6 +94,19 @@ func main() {
 	f := examples.RedirectLogger("editor.log")
 	defer f.Close()
 
+	flow := gowid.RenderFlow{}
+	txts := pile.New([]gowid.IContainerWidget{
+		&gowid.ContainerWidget{
+			IWidget: tasktxt,
+			D:       flow,
+		},
+		&gowid.ContainerWidget{
+			IWidget: timertxt,
+			D:       flow,
+		},
+	})
+	status := vpadding.New(txts, gowid.VAlignMiddle{}, flow)
+	viewHolder := holder.New(status)
 	inpute = edit.New()
 	onelineEd := appkeys.New(
 		inpute,
@@ -86,8 +114,6 @@ func main() {
 		appkeys.Options{
 			ApplyBefore: true,
 		})
-	txt := text.New("hello, world")
-	viewHolder := holder.New(txt)
 	inputd = dialog.New(onelineEd)
 	inputd.Open(viewHolder, gowid.RenderWithRatio{R: 0.5}, app)
 	app, err = gowid.NewApp(gowid.AppArgs{
