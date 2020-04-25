@@ -2,7 +2,10 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
+	"sync"
+	"time"
 
 	"github.com/gcla/gowid"
 	"github.com/gcla/gowid/examples"
@@ -14,19 +17,27 @@ import (
 	"github.com/gcla/gowid/widgets/vpadding"
 	"github.com/gdamore/tcell"
 	"github.com/hrfmmr/lyco/appkeys"
+	"github.com/hrfmmr/lyco/timer"
 
 	"github.com/sirupsen/logrus"
 )
 
 //======================================================================
 
+const (
+	pomodoroDuration = 25 * time.Minute
+)
+
 var (
-	app      *gowid.App
-	err      error
-	inpute   *edit.Widget
-	inputd   *dialog.Widget
-	tasktxt  *text.Widget
-	timertxt *text.Widget
+	wg            sync.WaitGroup
+	app           *gowid.App
+	err           error
+	inpute        *edit.Widget
+	inputd        *dialog.Widget
+	tasktxt       *text.Widget
+	timertxt      *text.Widget
+	finChan       = make(chan struct{}, 1)
+	startTaskChan = make(chan struct{}, 1)
 )
 
 func init() {
@@ -36,37 +47,6 @@ func init() {
 	timertxt = text.New("timer", text.Options{
 		Align: gowid.HAlignMiddle{},
 	})
-}
-
-type (
-	handler struct{}
-)
-
-func (h handler) UnhandledInput(app gowid.IApp, ev interface{}) bool {
-	handled := false
-	if evk, ok := ev.(*tcell.EventKey); ok {
-		logrus.Infof("🐛 UnhandledInput evk:%v", evk.Key())
-		switch evk.Key() {
-		case tcell.KeyEsc, tcell.KeyCtrlC:
-			logrus.Infof("🐛 case tcell.KeyEnter, tcell.KeyCtrlC ev:%v", ev)
-			handled = true
-			app.Quit()
-		case tcell.KeyCtrlX:
-			logrus.Infof("🐛 case tcell.KeyCtrlX:")
-		case tcell.KeyEnter:
-			//TODO: dialogに対するEnterキー押下で入力値をログ出力しようとしたが、ダメ。(dialog表示時にはこのUnhandledInput自体フックされず。)
-			// dialog自体に対するイベントフックAPIがないか調査する🔍
-			logrus.Infof("🐛 case tcell.KeyEnter:")
-			handled = true
-			var buf bytes.Buffer
-			_, err := io.Copy(&buf, inpute)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-			logrus.Infof("🐛 editor buf:%v", buf.String())
-		}
-	}
-	return handled
 }
 
 func handleEnter() appkeys.KeyInputFn {
@@ -82,16 +62,30 @@ func handleEnter() appkeys.KeyInputFn {
 			}
 			s := buf.String()
 			logrus.Infof("🐛 main#handleEnter case tcell.KeyEnter - 📝editor buf:%v", s)
-			tasktxt.SetText(s, app)
 			inputd.Close(app)
+			tasktxt.SetText(s, app)
+			startTaskChan <- struct{}{}
 			handled = true
 		}
 		return handled
 	}
 }
 
+func startTask() {
+	logrus.Infof("🐛 main#startTask")
+	t := timer.New()
+	for d := range t.Start(time.Second, pomodoroDuration) {
+		seconds := d / 1e9
+		remaining := fmt.Sprintf("%02d:%02d", int(seconds/60)%60, seconds%60)
+		logrus.Infof("🐛 main#startTask - remaining:%v", remaining)
+		app.Run(gowid.RunFunction(func(app gowid.IApp) {
+			timertxt.SetText(remaining, app)
+		}))
+	}
+}
+
 func main() {
-	f := examples.RedirectLogger("editor.log")
+	f := examples.RedirectLogger("lyco.log")
 	defer f.Close()
 
 	flow := gowid.RenderFlow{}
@@ -116,10 +110,29 @@ func main() {
 		})
 	inputd = dialog.New(onelineEd)
 	inputd.Open(viewHolder, gowid.RenderWithRatio{R: 0.5}, app)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+	Loop:
+		for {
+			select {
+			case <-finChan:
+				logrus.Infof("🔴 #main case <-finChan")
+				break Loop
+			case <-startTaskChan:
+				logrus.Infof("🐛 #main case <-startTaskChan")
+				go startTask()
+			}
+		}
+	}()
+
 	app, err = gowid.NewApp(gowid.AppArgs{
 		View: viewHolder,
 		Log:  logrus.StandardLogger(),
 	})
 	examples.ExitOnErr(err)
-	app.MainLoop(handler{})
+	app.SimpleMainLoop()
+	finChan <- struct{}{}
+	wg.Wait()
 }
