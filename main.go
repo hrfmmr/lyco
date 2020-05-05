@@ -10,9 +10,12 @@ import (
 	"github.com/gcla/gowid"
 	"github.com/gcla/gowid/examples"
 	"github.com/gcla/gowid/widgets/dialog"
+	"github.com/gcla/gowid/widgets/divider"
 	"github.com/gcla/gowid/widgets/edit"
+	"github.com/gcla/gowid/widgets/fill"
 	"github.com/gcla/gowid/widgets/holder"
 	"github.com/gcla/gowid/widgets/pile"
+	"github.com/gcla/gowid/widgets/table"
 	"github.com/gcla/gowid/widgets/text"
 	"github.com/gcla/gowid/widgets/vpadding"
 	"github.com/gdamore/tcell"
@@ -31,6 +34,7 @@ const (
 var (
 	wg            sync.WaitGroup
 	app           *gowid.App
+	flow          gowid.RenderFlow
 	err           error
 	inpute        *edit.Widget
 	inputd        *dialog.Widget
@@ -44,7 +48,7 @@ func init() {
 	tasktxt = text.New("", text.Options{
 		Align: gowid.HAlignMiddle{},
 	})
-	timertxt = text.New("timer", text.Options{
+	timertxt = text.New("", text.Options{
 		Align: gowid.HAlignMiddle{},
 	})
 }
@@ -88,19 +92,51 @@ func main() {
 	f := examples.RedirectLogger("lyco.log")
 	defer f.Close()
 
-	flow := gowid.RenderFlow{}
-	txts := pile.New([]gowid.IContainerWidget{
+	currentTaskView := vpadding.New(
+		pile.NewFlow(tasktxt, timertxt),
+		gowid.VAlignMiddle{},
+		flow,
+	)
+	metricsModel := table.NewSimpleModel(
+		[]string{"title", "elapsed", "poms"},
+		[][]string{
+			{"task1", "1h25m19s", "5"},
+			{"task2", "1h20m19s", "4"},
+			{"task3", "1h2m19s", "3"},
+			{"task4", "1h2m19s", "2"},
+			{"task5", "1h2m19s", "1"},
+		},
+		table.SimpleOptions{
+			Style: table.StyleOptions{
+				HorizontalSeparator: divider.NewAscii(),
+				TableSeparator:      divider.NewUnicode(),
+				VerticalSeparator:   fill.New('|'),
+			},
+		},
+	)
+	metricsView := vpadding.New(
+		pile.NewFlow(
+			text.New("Total ⏰:1h24m59s 🍅:6poms"),
+			table.New(metricsModel),
+		),
+		gowid.VAlignTop{},
+		flow,
+	)
+	appView := pile.New([]gowid.IContainerWidget{
 		&gowid.ContainerWidget{
-			IWidget: tasktxt,
+			IWidget: currentTaskView,
+			D:       gowid.RenderWithRatio{R: 0.2},
+		},
+		&gowid.ContainerWidget{
+			IWidget: divider.NewAscii(),
 			D:       flow,
 		},
 		&gowid.ContainerWidget{
-			IWidget: timertxt,
+			IWidget: metricsView,
 			D:       flow,
 		},
 	})
-	status := vpadding.New(txts, gowid.VAlignMiddle{}, flow)
-	viewHolder := holder.New(status)
+	viewHolder := holder.New(appView)
 	inpute = edit.New()
 	onelineEd := appkeys.New(
 		inpute,
