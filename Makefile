@@ -3,7 +3,7 @@ PRJ=$(shell basename "$(PWD)")
 .PHONY: build
 ## build: Build app
 build:
-	go build -o .build/app .
+	go build -o .build/app ./cmd/lyco
 
 .PHONY: run
 ## run: Run app
