@@ -20,7 +20,7 @@ import (
 	"github.com/gcla/gowid/widgets/vpadding"
 	"github.com/gdamore/tcell"
 	"github.com/hrfmmr/lyco/appkeys"
-	"github.com/hrfmmr/lyco/timer"
+	"github.com/hrfmmr/lyco/utils/timer"
 
 	"github.com/sirupsen/logrus"
 )
