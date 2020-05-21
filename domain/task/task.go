@@ -14,6 +14,7 @@ type (
 		Name() Name
 		Duration() time.Duration
 		StartedAt() StartedAt
+		Elapsed() time.Duration
 		Status() Status
 		// behaviors
 		Start(at time.Time)
@@ -26,6 +27,7 @@ type (
 		name      Name
 		duration  time.Duration
 		startedAt StartedAt
+		elapsed   time.Duration
 		status    Status
 	}
 )
@@ -46,6 +48,10 @@ func (t *task) Duration() time.Duration {
 	return t.duration
 }
 
+func (t *task) Elapsed() time.Duration {
+	return t.elapsed
+}
+
 func (t *task) StartedAt() StartedAt {
 	return t.startedAt
 }
@@ -58,6 +64,12 @@ func (t *task) Start(at time.Time) {
 	t.startedAt = NewStartedAt(at.UnixNano())
 	t.status = TaskStatusRunning
 }
-func (t *task) Stop()   {}
-func (t *task) Pause()  {}
+func (t *task) Stop() {}
+
+func (t *task) Pause() {
+	now := time.Now().UnixNano()
+	t.elapsed = time.Duration(now - t.startedAt.Value())
+	t.status = TaskStatusPaused
+}
+
 func (t *task) Resume() {}
