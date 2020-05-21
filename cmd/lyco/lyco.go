@@ -21,6 +21,7 @@ var (
 	err              error
 	finCh            = make(chan struct{}, 1)
 	startTaskUseCase = di.InitStartTaskUseCase()
+	pauseTaskUseCase = di.InitPauseTaskUseCase()
 	taskRepository   = di.ProvideTaskRepository()
 )
 
@@ -58,6 +59,13 @@ func main() {
 				tasktimer.Stop()
 				tasktimer = timer.NewTaskTimer()
 				tasktimer.Start(task)
+			case <-ui.OnPauseTask():
+				logrus.Info("🐛 <-ui.OnPauseTask()")
+				task := taskRepository.GetCurrent()
+				if err := appctx.UseCase(pauseTaskUseCase).Execute(task); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				tasktimer.Stop()
 			case task := <-tasktimer.Ticker():
 				logrus.Infof("♻ #main case task := <-tasktimer.Ticker()")
 				ui.Update(app, dto.ConvertTaskToDTO(task))
@@ -68,7 +76,7 @@ func main() {
 	//TODO: temp
 	ui.SwitchTask(app)
 
-	app.SimpleMainLoop()
+	app.MainLoop(gowid.UnhandledInputFunc(ui.UnhandledInput))
 	finCh <- struct{}{}
 	wg.Wait()
 }

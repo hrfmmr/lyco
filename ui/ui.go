@@ -8,8 +8,11 @@ import (
 	"github.com/gcla/gowid/widgets/dialog"
 	"github.com/gcla/gowid/widgets/divider"
 	"github.com/gcla/gowid/widgets/edit"
+	"github.com/gcla/gowid/widgets/framed"
 	"github.com/gcla/gowid/widgets/holder"
+	"github.com/gcla/gowid/widgets/hpadding"
 	"github.com/gcla/gowid/widgets/pile"
+	"github.com/gcla/gowid/widgets/text"
 	"github.com/gdamore/tcell"
 	"github.com/hrfmmr/lyco/appkeys"
 	"github.com/hrfmmr/lyco/application/dto"
@@ -21,6 +24,7 @@ var (
 	taskInputEditor *edit.Widget
 	taskInputDialog *dialog.Widget
 	onSubmitTask    = make(chan string, 1)
+	onPauseTask     = make(chan struct{}, 1)
 )
 
 func Build() (*gowid.App, error) {
@@ -45,8 +49,35 @@ func Build() (*gowid.App, error) {
 	})
 }
 
+func UnhandledInput(app gowid.IApp, event interface{}) bool {
+	handled := false
+	if evk, ok := event.(*tcell.EventKey); ok {
+		switch evk.Key() {
+		case tcell.KeyCtrlC:
+			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlC")
+			handled = true
+			msg := text.New("Do you want to quit?")
+			yesno := dialog.New(
+				framed.NewSpace(hpadding.New(msg, gowid.HAlignMiddle{}, gowid.RenderFixed{})),
+				dialog.Options{
+					Buttons: dialog.OkCancel,
+				},
+			)
+			yesno.Open(appContainer, gowid.RenderWithRatio{R: 0.5}, app)
+		case tcell.KeyCtrlP:
+			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlP")
+			onPauseTask <- struct{}{}
+		}
+	}
+	return handled
+}
+
 func OnStartTask() <-chan string {
 	return onSubmitTask
+}
+
+func OnPauseTask() <-chan struct{} {
+	return onPauseTask
 }
 
 func SwitchTask(app gowid.IApp) {

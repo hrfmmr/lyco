@@ -55,3 +55,12 @@ func InitStartTaskUseCase() *usecase.StartTaskUseCase {
 		),
 	)
 }
+
+func InitPauseTaskUseCase() *usecase.PauseTaskUseCase {
+	panic(
+		wire.Build(
+			usecase.NewPauseTaskUseCase,
+			ProvideTaskRepository,
+		),
+	)
+}
