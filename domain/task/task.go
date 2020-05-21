@@ -18,9 +18,9 @@ type (
 		Status() Status
 		// behaviors
 		Start(at time.Time)
-		Stop()
 		Pause()
-		Resume()
+		Resume(at time.Time)
+		Stop()
 	}
 
 	task struct {
@@ -64,12 +64,16 @@ func (t *task) Start(at time.Time) {
 	t.startedAt = NewStartedAt(at.UnixNano())
 	t.status = TaskStatusRunning
 }
-func (t *task) Stop() {}
 
 func (t *task) Pause() {
 	now := time.Now().UnixNano()
-	t.elapsed = time.Duration(now - t.startedAt.Value())
+	t.elapsed += time.Duration(now - t.startedAt.Value())
 	t.status = TaskStatusPaused
 }
 
-func (t *task) Resume() {}
+func (t *task) Resume(at time.Time) {
+	t.status = TaskStatusRunning
+	t.startedAt = NewStartedAt(at.UnixNano())
+}
+
+func (t *task) Stop() {}

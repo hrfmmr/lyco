@@ -25,6 +25,7 @@ var (
 	taskInputDialog *dialog.Widget
 	onSubmitTask    = make(chan string, 1)
 	onPauseTask     = make(chan struct{}, 1)
+	onResumeTask    = make(chan struct{}, 1)
 )
 
 func Build() (*gowid.App, error) {
@@ -67,6 +68,9 @@ func UnhandledInput(app gowid.IApp, event interface{}) bool {
 		case tcell.KeyCtrlP:
 			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlP")
 			onPauseTask <- struct{}{}
+		case tcell.KeyCtrlR:
+			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlR")
+			onResumeTask <- struct{}{}
 		}
 	}
 	return handled
@@ -78,6 +82,10 @@ func OnStartTask() <-chan string {
 
 func OnPauseTask() <-chan struct{} {
 	return onPauseTask
+}
+
+func OnResumeTask() <-chan struct{} {
+	return onResumeTask
 }
 
 func SwitchTask(app gowid.IApp) {
@@ -114,6 +122,6 @@ func Update(app gowid.IApp, task dto.TaskDTO) {
 	logrus.Infof("🔃ui#Update task:%v", task)
 	app.Run(gowid.RunFunction(func(app gowid.IApp) {
 		updateTaskText(app, task.Name())
-		updateTimerText(app, task.Duration(), task.StartedAt())
+		updateTimerText(app, task.RemainsTimerText())
 	}))
 }

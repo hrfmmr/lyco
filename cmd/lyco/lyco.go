@@ -15,14 +15,15 @@ import (
 )
 
 var (
-	wg               sync.WaitGroup
-	app              *gowid.App
-	flow             gowid.RenderFlow
-	err              error
-	finCh            = make(chan struct{}, 1)
-	startTaskUseCase = di.InitStartTaskUseCase()
-	pauseTaskUseCase = di.InitPauseTaskUseCase()
-	taskRepository   = di.ProvideTaskRepository()
+	wg                sync.WaitGroup
+	app               *gowid.App
+	flow              gowid.RenderFlow
+	err               error
+	finCh             = make(chan struct{}, 1)
+	startTaskUseCase  = di.InitStartTaskUseCase()
+	pauseTaskUseCase  = di.InitPauseTaskUseCase()
+	resumeTaskUseCase = di.InitResumeTaskUseCase()
+	taskRepository    = di.ProvideTaskRepository()
 )
 
 func main() {
@@ -61,11 +62,25 @@ func main() {
 				tasktimer.Start(task)
 			case <-ui.OnPauseTask():
 				logrus.Info("🐛 <-ui.OnPauseTask()")
-				task := taskRepository.GetCurrent()
-				if err := appctx.UseCase(pauseTaskUseCase).Execute(task); err != nil {
+				t := taskRepository.GetCurrent()
+				if t.Status() == task.TaskStatusPaused {
+					continue
+				}
+				if err := appctx.UseCase(pauseTaskUseCase).Execute(t); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
 				tasktimer.Stop()
+			case <-ui.OnResumeTask():
+				logrus.Info("🐛 <-ui.OnResumeTask()")
+				t := taskRepository.GetCurrent()
+				if t.Status() == task.TaskStatusRunning {
+					continue
+				}
+				if err := appctx.UseCase(resumeTaskUseCase).Execute(t); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				tasktimer = timer.NewTaskTimer()
+				tasktimer.Start(t)
 			case task := <-tasktimer.Ticker():
 				logrus.Infof("♻ #main case task := <-tasktimer.Ticker()")
 				ui.Update(app, dto.ConvertTaskToDTO(task))

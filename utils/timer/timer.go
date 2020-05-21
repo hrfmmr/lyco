@@ -46,7 +46,7 @@ func (t *timer) Start(m task.Task) {
 		}
 		t.finCh <- struct{}{}
 		t.cancel()
-	}(m.Duration())
+	}(m.Duration() - m.Elapsed())
 }
 
 func (t *timer) Stop() {

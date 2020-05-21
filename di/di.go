@@ -64,3 +64,12 @@ func InitPauseTaskUseCase() *usecase.PauseTaskUseCase {
 		),
 	)
 }
+
+func InitResumeTaskUseCase() *usecase.ResumeTaskUseCase {
+	panic(
+		wire.Build(
+			usecase.NewResumeTaskUseCase,
+			ProvideTaskRepository,
+		),
+	)
+}
