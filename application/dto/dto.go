@@ -66,6 +66,8 @@ func (t *taskDTO) RemainsDuration() int64 {
 	switch t.Status() {
 	case TaskStatusPaused:
 		return duration - elapsed
+	case TaskStatusAborted:
+		return duration
 	default:
 		to := startedAt + (duration - elapsed)
 		now := time.Now().UnixNano()

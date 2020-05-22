@@ -73,3 +73,12 @@ func InitResumeTaskUseCase() *usecase.ResumeTaskUseCase {
 		),
 	)
 }
+
+func InitStopTaskUseCase() *usecase.StopTaskUseCase {
+	panic(
+		wire.Build(
+			usecase.NewStopTaskUseCase,
+			ProvideTaskRepository,
+		),
+	)
+}

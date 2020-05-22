@@ -23,6 +23,7 @@ var (
 	startTaskUseCase  = di.InitStartTaskUseCase()
 	pauseTaskUseCase  = di.InitPauseTaskUseCase()
 	resumeTaskUseCase = di.InitResumeTaskUseCase()
+	stopTaskUseCase   = di.InitStopTaskUseCase()
 	taskRepository    = di.ProvideTaskRepository()
 )
 
@@ -81,6 +82,16 @@ func main() {
 				}
 				tasktimer = timer.NewTaskTimer()
 				tasktimer.Start(t)
+			case <-ui.OnStopTask():
+				logrus.Info("🐛 <-ui.OnStopTask()")
+				t := taskRepository.GetCurrent()
+				if t.Status() == task.TaskStatusAborted {
+					continue
+				}
+				if err := appctx.UseCase(stopTaskUseCase).Execute(t); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				tasktimer.Stop()
 			case task := <-tasktimer.Ticker():
 				logrus.Infof("♻ #main case task := <-tasktimer.Ticker()")
 				ui.Update(app, dto.ConvertTaskToDTO(task))

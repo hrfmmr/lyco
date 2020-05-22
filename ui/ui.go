@@ -26,6 +26,7 @@ var (
 	onSubmitTask    = make(chan string, 1)
 	onPauseTask     = make(chan struct{}, 1)
 	onResumeTask    = make(chan struct{}, 1)
+	onStopTask      = make(chan struct{}, 1)
 )
 
 func Build() (*gowid.App, error) {
@@ -71,6 +72,9 @@ func UnhandledInput(app gowid.IApp, event interface{}) bool {
 		case tcell.KeyCtrlR:
 			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlR")
 			onResumeTask <- struct{}{}
+		case tcell.KeyCtrlQ:
+			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlQ")
+			onStopTask <- struct{}{}
 		}
 	}
 	return handled
@@ -86,6 +90,10 @@ func OnPauseTask() <-chan struct{} {
 
 func OnResumeTask() <-chan struct{} {
 	return onResumeTask
+}
+
+func OnStopTask() <-chan struct{} {
+	return onStopTask
 }
 
 func SwitchTask(app gowid.IApp) {

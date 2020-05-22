@@ -61,14 +61,15 @@ func (t *task) Status() Status {
 }
 
 func (t *task) Start(at time.Time) {
-	t.startedAt = NewStartedAt(at.UnixNano())
 	t.status = TaskStatusRunning
+	t.startedAt = NewStartedAt(at.UnixNano())
+	t.elapsed = 0
 }
 
 func (t *task) Pause() {
+	t.status = TaskStatusPaused
 	now := time.Now().UnixNano()
 	t.elapsed += time.Duration(now - t.startedAt.Value())
-	t.status = TaskStatusPaused
 }
 
 func (t *task) Resume(at time.Time) {
@@ -76,4 +77,8 @@ func (t *task) Resume(at time.Time) {
 	t.startedAt = NewStartedAt(at.UnixNano())
 }
 
-func (t *task) Stop() {}
+func (t *task) Stop() {
+	t.status = TaskStatusAborted
+	now := time.Now().UnixNano()
+	t.elapsed += time.Duration(now - t.startedAt.Value())
+}
