@@ -64,7 +64,7 @@ func main() {
 			case <-ui.OnPauseTask():
 				logrus.Info("🐛 <-ui.OnPauseTask()")
 				t := taskRepository.GetCurrent()
-				if t.Status() == task.TaskStatusPaused {
+				if t.Status().Value() == task.TaskStatusPaused {
 					continue
 				}
 				if err := appctx.UseCase(pauseTaskUseCase).Execute(t); err != nil {
@@ -74,7 +74,7 @@ func main() {
 			case <-ui.OnResumeTask():
 				logrus.Info("🐛 <-ui.OnResumeTask()")
 				t := taskRepository.GetCurrent()
-				if t.Status() == task.TaskStatusRunning {
+				if t.Status().Value() == task.TaskStatusRunning {
 					continue
 				}
 				if err := appctx.UseCase(resumeTaskUseCase).Execute(t); err != nil {
@@ -85,7 +85,7 @@ func main() {
 			case <-ui.OnStopTask():
 				logrus.Info("🐛 <-ui.OnStopTask()")
 				t := taskRepository.GetCurrent()
-				if t.Status() == task.TaskStatusAborted {
+				if t.Status().Value() == task.TaskStatusAborted {
 					continue
 				}
 				if err := appctx.UseCase(stopTaskUseCase).Execute(t); err != nil {

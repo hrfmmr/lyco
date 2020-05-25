@@ -36,7 +36,7 @@ func NewTask(name Name, d time.Duration) Task {
 	return &task{
 		name:     name,
 		duration: d,
-		status:   TaskStatusNone,
+		status:   NewStatus(TaskStatusNone),
 	}
 }
 
@@ -61,24 +61,24 @@ func (t *task) Status() Status {
 }
 
 func (t *task) Start(at time.Time) {
-	t.status = TaskStatusRunning
+	t.status.Update(NewStatus(TaskStatusRunning))
 	t.startedAt = NewStartedAt(at.UnixNano())
 	t.elapsed = 0
 }
 
 func (t *task) Pause() {
-	t.status = TaskStatusPaused
+	t.status.Update(NewStatus(TaskStatusPaused))
 	now := time.Now().UnixNano()
 	t.elapsed += time.Duration(now - t.startedAt.Value())
 }
 
 func (t *task) Resume(at time.Time) {
-	t.status = TaskStatusRunning
+	t.status.Update(NewStatus(TaskStatusRunning))
 	t.startedAt = NewStartedAt(at.UnixNano())
 }
 
 func (t *task) Stop() {
-	t.status = TaskStatusAborted
+	t.status.Update(NewStatus(TaskStatusAborted))
 	now := time.Now().UnixNano()
 	t.elapsed += time.Duration(now - t.startedAt.Value())
 }
