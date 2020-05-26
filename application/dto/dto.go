@@ -15,6 +15,15 @@ const (
 	TaskStatusFinished = "finished"
 )
 
+type AvailableAction int
+
+const (
+	AvailableActionStart = iota
+	AvailableActionPause
+	AvailableActionResume
+	AvailableActionAbort
+)
+
 type (
 	TaskDTO interface {
 		Name() string
@@ -22,22 +31,25 @@ type (
 		StartedAt() int64
 		Elapsed() int64
 		Status() string
+		AvailableActions() []AvailableAction
 		RemainsDuration() int64
 		RemainsTimerText() string
 	}
 
 	taskDTO struct {
-		name      string
-		duration  int64
-		startedAt int64
-		elapsed   int64
-		status    string
+		name             string
+		duration         int64
+		startedAt        int64
+		elapsed          int64
+		status           string
+		availableActions []AvailableAction
 	}
 )
 
 func NewTaskDTO() TaskDTO {
 	return &taskDTO{
-		status: TaskStatusNone,
+		status:           TaskStatusNone,
+		availableActions: []AvailableAction{},
 	}
 }
 
@@ -61,6 +73,10 @@ func (t *taskDTO) Status() string {
 	return t.status
 }
 
+func (t *taskDTO) AvailableActions() []AvailableAction {
+	return t.availableActions
+}
+
 func (t *taskDTO) RemainsDuration() int64 {
 	duration, elapsed, startedAt := t.Duration(), t.Elapsed(), t.StartedAt()
 	switch t.Status() {
@@ -81,11 +97,16 @@ func (t *taskDTO) RemainsTimerText() string {
 }
 
 func ConvertTaskToDTO(t task.Task) TaskDTO {
+	availableActions := []AvailableAction{}
+	for _, v := range t.AvailableActions() {
+		availableActions = append(availableActions, AvailableAction(v))
+	}
 	return &taskDTO{
 		t.Name().Value(),
 		int64(t.Duration()),
 		t.StartedAt().Value(),
 		int64(t.Elapsed()),
 		string(t.Status().Value()),
+		availableActions,
 	}
 }

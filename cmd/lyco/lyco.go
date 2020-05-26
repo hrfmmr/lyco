@@ -49,6 +49,9 @@ func main() {
 				task := sg.GetTask().State()
 				ui.Update(app, task)
 			case s := <-ui.OnStartTask():
+				if t := taskRepository.GetCurrent(); t != nil && !t.CanStart() {
+					continue
+				}
 				logrus.Infof("🐛 ui.OnStartTask::taskName=%v", s)
 				taskName, err := task.NewName(s)
 				if err != nil {
@@ -57,14 +60,14 @@ func main() {
 				if err := appctx.UseCase(startTaskUseCase).Execute(taskName); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
-				task := taskRepository.GetCurrent()
+				t := taskRepository.GetCurrent()
 				tasktimer.Stop()
 				tasktimer = timer.NewTaskTimer()
-				tasktimer.Start(task)
+				tasktimer.Start(t)
 			case <-ui.OnPauseTask():
 				logrus.Info("🐛 <-ui.OnPauseTask()")
 				t := taskRepository.GetCurrent()
-				if t.Status().Value() == task.TaskStatusPaused {
+				if !t.CanPause() {
 					continue
 				}
 				if err := appctx.UseCase(pauseTaskUseCase).Execute(t); err != nil {
@@ -74,7 +77,7 @@ func main() {
 			case <-ui.OnResumeTask():
 				logrus.Info("🐛 <-ui.OnResumeTask()")
 				t := taskRepository.GetCurrent()
-				if t.Status().Value() == task.TaskStatusRunning {
+				if !t.CanResume() {
 					continue
 				}
 				if err := appctx.UseCase(resumeTaskUseCase).Execute(t); err != nil {
@@ -85,7 +88,7 @@ func main() {
 			case <-ui.OnStopTask():
 				logrus.Info("🐛 <-ui.OnStopTask()")
 				t := taskRepository.GetCurrent()
-				if t.Status().Value() == task.TaskStatusAborted {
+				if !t.CanAbort() {
 					continue
 				}
 				if err := appctx.UseCase(stopTaskUseCase).Execute(t); err != nil {

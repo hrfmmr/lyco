@@ -17,7 +17,6 @@ const (
 type Status interface {
 	Value() StatusValue
 	Update(to Status) error
-	NextStatuses() []StatusValue
 }
 
 type status struct {
@@ -32,7 +31,7 @@ func (s *status) Value() StatusValue {
 	return s.value
 }
 
-// [TaskStatus state diagram](http://www.plantuml.com/plantuml/png/ZP9DJiD038NtFeNLRW0f5s1H5GcnHAWiemeDZ6b7D9veVXOSW5jmEaw2CyLIJ5YGLUQzB_5xrcnpSQdKuGHm39wGXh6yewVyai9OGcGGe12kxYFJ2bt6TdvYEQgrgyo13pCtdHK57bpDv6V-s0IrxmA7V3J0wu-aoCrpJCKGxgm0z5TxxBgDpQMlpJ6Py1eVfyeNbs3rhbyV4X7lsnSc1CT261bFWTy0vRcDJ5-V7q3iSJ9__sfZUih8jW4TgV8VqNQKwx04-tKYBy5iT-5bByig_-QrODkIx14ihkgMs4ytv1i0)
+// [TaskStatus state diagram](http://www.plantuml.com/plantuml/png/VP5DIi0m48NtESLGDohq0YvA1N4fKfUbYsZ6DjXEIduM7i1RU3fFuYJDK0IrYpAPRoRlFTA7g7rCsweMQn1ms-Cx60mltkxHEbBC8qBpu0WRq0682saEYSZINFh-g0KzwXJG5BANKi2z9HkMYbxhGU3ji_EnCdtKIetN4xHjToZdNpw97jp0KqvmUQMaquuNiqUaYQT4WFSYWYDOBRqfuE_E4NvzVYWa0ncUwrrrp5UN57nrRVoG7J2axOHPrgDXKN7ECoNFQUtV6R7wHpfP-9tsI8OVyHi0)
 func (s *status) Update(to Status) error {
 	for _, v := range nextStatuses(s.value) {
 		if to.Value() == v {
@@ -41,10 +40,6 @@ func (s *status) Update(to Status) error {
 		}
 	}
 	return NewInvalidStatusTransition(fmt.Sprintf("not allowed state transition from %s to %s", s.Value(), to.Value()))
-}
-
-func (s *status) NextStatuses() []StatusValue {
-	return nextStatuses(s.value)
 }
 
 func nextStatuses(s StatusValue) []StatusValue {

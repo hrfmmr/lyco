@@ -8,6 +8,15 @@ const (
 	DefaultDuration = 25 * time.Minute
 )
 
+type AvailableAction int
+
+const (
+	AvailableActionStart = iota
+	AvailableActionPause
+	AvailableActionResume
+	AvailableActionAbort
+)
+
 type (
 	Task interface {
 		// props
@@ -21,6 +30,12 @@ type (
 		Pause()
 		Resume(at time.Time)
 		Stop()
+		// utils
+		AvailableActions() []AvailableAction
+		CanStart() bool
+		CanPause() bool
+		CanResume() bool
+		CanAbort() bool
 	}
 
 	task struct {
@@ -81,4 +96,50 @@ func (t *task) Stop() {
 	t.status.Update(NewStatus(TaskStatusAborted))
 	now := time.Now().UnixNano()
 	t.elapsed += time.Duration(now - t.startedAt.Value())
+}
+
+func (t *task) AvailableActions() []AvailableAction {
+	switch t.Status().Value() {
+	case TaskStatusNone, TaskStatusFinished, TaskStatusAborted:
+		return []AvailableAction{
+			AvailableActionStart,
+		}
+	case TaskStatusRunning:
+		return []AvailableAction{
+			AvailableActionPause,
+			AvailableActionAbort,
+		}
+	case TaskStatusPaused:
+		return []AvailableAction{
+			AvailableActionResume,
+			AvailableActionAbort,
+		}
+	default:
+		return []AvailableAction{}
+	}
+}
+
+func (t *task) CanStart() bool {
+	return t.hasAvailableAction(AvailableActionStart)
+}
+
+func (t *task) CanPause() bool {
+	return t.hasAvailableAction(AvailableActionPause)
+}
+
+func (t *task) CanResume() bool {
+	return t.hasAvailableAction(AvailableActionResume)
+}
+
+func (t *task) CanAbort() bool {
+	return t.hasAvailableAction(AvailableActionAbort)
+}
+
+func (t *task) hasAvailableAction(action AvailableAction) bool {
+	for _, v := range t.AvailableActions() {
+		if v == action {
+			return true
+		}
+	}
+	return false
 }
