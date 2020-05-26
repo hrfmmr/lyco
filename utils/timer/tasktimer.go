@@ -14,7 +14,7 @@ type TaskTimer interface {
 	OnFinished() <-chan struct{}
 }
 
-type timer struct {
+type tasktimer struct {
 	tickCh chan task.Task
 	finCh  chan struct{}
 	ctx    context.Context
@@ -23,7 +23,7 @@ type timer struct {
 
 func NewTaskTimer() TaskTimer {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &timer{
+	return &tasktimer{
 		tickCh: make(chan task.Task, 1),
 		finCh:  make(chan struct{}, 1),
 		ctx:    ctx,
@@ -31,7 +31,7 @@ func NewTaskTimer() TaskTimer {
 	}
 }
 
-func (t *timer) Start(m task.Task) {
+func (t *tasktimer) Start(m task.Task) {
 	go func(d time.Duration) {
 		tick := time.Second
 		ticker := time.NewTicker(tick)
@@ -49,14 +49,14 @@ func (t *timer) Start(m task.Task) {
 	}(m.Duration() - m.Elapsed())
 }
 
-func (t *timer) Stop() {
+func (t *tasktimer) Stop() {
 	t.cancel()
 }
 
-func (t *timer) Ticker() <-chan task.Task {
+func (t *tasktimer) Ticker() <-chan task.Task {
 	return t.tickCh
 }
 
-func (t *timer) OnFinished() <-chan struct{} {
+func (t *tasktimer) OnFinished() <-chan struct{} {
 	return t.finCh
 }
