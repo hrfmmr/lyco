@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	DefaultDuration = 5 * time.Second
+	DefaultDuration = 25 * time.Minute
 )
 
 type AvailableAction int
