@@ -29,6 +29,7 @@ var (
 	pauseTaskUseCase   = di.InitPauseTaskUseCase()
 	resumeTaskUseCase  = di.InitResumeTaskUseCase()
 	stopTaskUseCase    = di.InitStopTaskUseCase()
+	switchTaskUseCase  = di.InitSwitchTaskUseCase()
 	abortBreaksUseCase = di.InitAbortBreaksUseCase()
 	taskRepository     = di.ProvideTaskRepository()
 )
@@ -103,6 +104,19 @@ func main() {
 					logrus.Fatalf("💀 %v", err)
 				}
 				tasktimer.Stop()
+			case s := <-ui.OnSwitchTask():
+				logrus.Info("🔄 <-ui.OnSwitchTask()")
+				taskName, err := task.NewName(s)
+				if err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				if err := appctx.UseCase(switchTaskUseCase).Execute(taskName); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				switched := taskRepository.GetCurrent()
+				tasktimer.Stop()
+				tasktimer = timer.NewTaskTimer()
+				tasktimer.Start(switched)
 			case task := <-tasktimer.Ticker():
 				logrus.Infof("⏰ #main case task := <-tasktimer.Ticker()")
 				ui.UpdateTask(app, dto.ConvertTaskToDTO(task))
@@ -148,10 +162,7 @@ func main() {
 			}
 		}
 	}(app)
-
-	//TODO: temp
-	ui.SwitchTask(app)
-
+	ui.StartTask(app)
 	app.MainLoop(gowid.UnhandledInputFunc(ui.UnhandledInput))
 	finCh <- struct{}{}
 	wg.Wait()

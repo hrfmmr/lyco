@@ -15,6 +15,7 @@ const (
 	AvailableActionPause
 	AvailableActionResume
 	AvailableActionAbort
+	AvailableActionSwitch
 )
 
 type (
@@ -55,6 +56,15 @@ func NewTask(name Name, d time.Duration) Task {
 	}
 }
 
+func NewTaskWithElapsed(name Name, d, elapsed time.Duration) Task {
+	return &task{
+		name:     name,
+		duration: d,
+		elapsed:  elapsed,
+		status:   NewStatus(TaskStatusNone),
+	}
+}
+
 func (t *task) Name() Name {
 	return t.name
 }
@@ -82,7 +92,6 @@ func (t *task) Start(at time.Time) error {
 		return err
 	}
 	t.startedAt = startedAt
-	t.elapsed = 0
 	return nil
 }
 
@@ -113,20 +122,36 @@ func (t *task) AvailableActions() []AvailableAction {
 	case TaskStatusNone, TaskStatusFinished, TaskStatusAborted:
 		return []AvailableAction{
 			AvailableActionStart,
+			AvailableActionSwitch,
 		}
 	case TaskStatusRunning:
 		return []AvailableAction{
 			AvailableActionPause,
 			AvailableActionAbort,
+			AvailableActionSwitch,
 		}
 	case TaskStatusPaused:
 		return []AvailableAction{
 			AvailableActionResume,
 			AvailableActionAbort,
+			AvailableActionSwitch,
 		}
 	default:
-		return []AvailableAction{}
+		return []AvailableAction{
+			AvailableActionSwitch,
+		}
 	}
+}
+
+func SwitchTask(current Task, to Name) (Task, error) {
+	if current.CanAbort() {
+		current.Stop()
+	}
+	t := NewTaskWithElapsed(to, DefaultDuration, current.Elapsed())
+	if err := t.Start(time.Now()); err != nil {
+		return nil, err
+	}
+	return t, nil
 }
 
 func (t *task) CanStart() bool {

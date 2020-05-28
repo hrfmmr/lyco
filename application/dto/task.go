@@ -22,6 +22,7 @@ const (
 	AvailableTaskActionPause
 	AvailableTaskActionResume
 	AvailableTaskActionAbort
+	AvailableTaskActionSwitch
 )
 
 type (

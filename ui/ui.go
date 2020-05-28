@@ -49,6 +49,7 @@ var (
 	onPauseTask   = make(chan struct{}, 1)
 	onResumeTask  = make(chan struct{}, 1)
 	onStopTask    = make(chan struct{}, 1)
+	onSwitchTask  = make(chan string, 1)
 	onAbortBreaks = make(chan struct{}, 1)
 	currentMode   = modeTask
 )
@@ -97,15 +98,15 @@ func UnhandledInput(app gowid.IApp, event interface{}) bool {
 		}
 		switch currentMode {
 		case modeTask:
-			return handleTaskKeyInput(evk)
+			return handleTaskKeyInput(app, evk)
 		case modeBreaks:
-			return handleBreaksKeyInput(evk)
+			return handleBreaksKeyInput(app, evk)
 		}
 	}
 	return handled
 }
 
-func handleTaskKeyInput(k *tcell.EventKey) (handled bool) {
+func handleTaskKeyInput(app gowid.IApp, k *tcell.EventKey) (handled bool) {
 	handled = false
 	switch k.Key() {
 	case tcell.KeyCtrlE:
@@ -130,11 +131,15 @@ func handleTaskKeyInput(k *tcell.EventKey) (handled bool) {
 		handled = true
 		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlQ")
 		onStopTask <- struct{}{}
+	case tcell.KeyCtrlS:
+		handled = true
+		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlS")
+		switchTask(app)
 	}
 	return
 }
 
-func handleBreaksKeyInput(k *tcell.EventKey) (handled bool) {
+func handleBreaksKeyInput(app gowid.IApp, k *tcell.EventKey) (handled bool) {
 	handled = false
 	switch k.Key() {
 	case tcell.KeyCtrlQ:
@@ -161,11 +166,23 @@ func OnStopTask() <-chan struct{} {
 	return onStopTask
 }
 
+func OnSwitchTask() <-chan string {
+	return onSwitchTask
+}
+
 func OnAbortBreaks() <-chan struct{} {
 	return onAbortBreaks
 }
 
-func SwitchTask(app gowid.IApp) {
+func StartTask(app gowid.IApp) {
+	showTaskInputDialog(app, true)
+}
+
+func switchTask(app gowid.IApp) {
+	showTaskInputDialog(app, false)
+}
+
+func showTaskInputDialog(app gowid.IApp, bootstrap bool) {
 	taskInputEditor = edit.New()
 	onelineEditor := appkeys.New(
 		taskInputEditor,
@@ -183,7 +200,12 @@ func SwitchTask(app gowid.IApp) {
 				s := buf.String()
 				logrus.Infof("🐛 SwitchTask::case tcell.KeyEnter - 📝editor buf:%v", s)
 				taskInputDialog.Close(app)
-				onStartTask <- s
+				switch bootstrap {
+				case true:
+					onStartTask <- s
+				case false:
+					onSwitchTask <- s
+				}
 			}
 			return handled
 		},
@@ -231,6 +253,8 @@ func convertTaskActionToKeymap(action dto.AvailableTaskAction) *keymap {
 		return NewKeymap("C-r", "to resume")
 	case dto.AvailableTaskActionAbort:
 		return NewKeymap("C-q", "to abort")
+	case dto.AvailableTaskActionSwitch:
+		return NewKeymap("C-s", "to switch")
 	}
 	return nil
 }
