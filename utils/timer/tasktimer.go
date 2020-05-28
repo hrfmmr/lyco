@@ -35,7 +35,7 @@ func (t *tasktimer) Start(m task.Task) {
 	go func(d time.Duration) {
 		tick := time.Second
 		ticker := time.NewTicker(tick)
-		for r := d; r >= 0; r -= tick {
+		for r := d; r > 0; r -= tick {
 			select {
 			case <-t.ctx.Done():
 				return

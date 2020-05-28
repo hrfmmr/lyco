@@ -40,7 +40,7 @@ func (t *breaksTimer) Start(b breaks.Breaks) {
 	go func(d time.Duration) {
 		tick := time.Second
 		ticker := time.NewTicker(tick)
-		for r := d; r >= 0; r -= tick {
+		for r := d; r > 0; r -= tick {
 			select {
 			case <-t.ctx.Done():
 				return
