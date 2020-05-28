@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 
 	"github.com/gcla/gowid"
@@ -24,6 +25,13 @@ type keymap struct {
 	desc string
 }
 
+type mode int
+
+const (
+	modeTask mode = iota
+	modeBreaks
+)
+
 const (
 	paletteCyan = "cyan"
 	paletteInv  = "inv"
@@ -37,10 +45,12 @@ var (
 		paletteCyan: gowid.MakePaletteEntry(gowid.ColorCyan, gowid.ColorBlack),
 		paletteInv:  gowid.MakePaletteEntry(gowid.ColorWhite, gowid.ColorBlack),
 	}
-	onStartTask  = make(chan string, 1)
-	onPauseTask  = make(chan struct{}, 1)
-	onResumeTask = make(chan struct{}, 1)
-	onStopTask   = make(chan struct{}, 1)
+	onStartTask   = make(chan string, 1)
+	onPauseTask   = make(chan struct{}, 1)
+	onResumeTask  = make(chan struct{}, 1)
+	onStopTask    = make(chan struct{}, 1)
+	onAbortBreaks = make(chan struct{}, 1)
+	currentMode   = modeTask
 )
 
 func NewKeymap(key, desc string) *keymap {
@@ -73,8 +83,7 @@ func Build() (*gowid.App, error) {
 func UnhandledInput(app gowid.IApp, event interface{}) bool {
 	handled := false
 	if evk, ok := event.(*tcell.EventKey); ok {
-		switch evk.Key() {
-		case tcell.KeyCtrlC:
+		if evk.Key() == tcell.KeyCtrlC {
 			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlC")
 			handled = true
 			msg := text.New("Do you want to quit?")
@@ -85,31 +94,55 @@ func UnhandledInput(app gowid.IApp, event interface{}) bool {
 				},
 			)
 			yesno.Open(appContainer, gowid.RenderWithRatio{R: 0.5}, app)
-		case tcell.KeyCtrlE:
-			handled = true
-			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlE")
-			var buf bytes.Buffer
-			_, err := io.Copy(&buf, taskText)
-			if err != nil {
-				logrus.Fatal(err)
-			}
-			s := buf.String()
-			onStartTask <- s
-		case tcell.KeyCtrlP:
-			handled = true
-			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlP")
-			onPauseTask <- struct{}{}
-		case tcell.KeyCtrlR:
-			handled = true
-			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlR")
-			onResumeTask <- struct{}{}
-		case tcell.KeyCtrlQ:
-			handled = true
-			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlQ")
-			onStopTask <- struct{}{}
+		}
+		switch currentMode {
+		case modeTask:
+			return handleTaskKeyInput(evk)
+		case modeBreaks:
+			return handleBreaksKeyInput(evk)
 		}
 	}
 	return handled
+}
+
+func handleTaskKeyInput(k *tcell.EventKey) (handled bool) {
+	handled = false
+	switch k.Key() {
+	case tcell.KeyCtrlE:
+		handled = true
+		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlE")
+		var buf bytes.Buffer
+		_, err := io.Copy(&buf, taskText)
+		if err != nil {
+			logrus.Fatal(err)
+		}
+		s := buf.String()
+		onStartTask <- s
+	case tcell.KeyCtrlP:
+		handled = true
+		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlP")
+		onPauseTask <- struct{}{}
+	case tcell.KeyCtrlR:
+		handled = true
+		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlR")
+		onResumeTask <- struct{}{}
+	case tcell.KeyCtrlQ:
+		handled = true
+		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlQ")
+		onStopTask <- struct{}{}
+	}
+	return
+}
+
+func handleBreaksKeyInput(k *tcell.EventKey) (handled bool) {
+	handled = false
+	switch k.Key() {
+	case tcell.KeyCtrlQ:
+		handled = true
+		logrus.Info("⌨ui#handleBreaksKeyInput::case tcell.KeyCtrlQ")
+		onAbortBreaks <- struct{}{}
+	}
+	return
 }
 
 func OnStartTask() <-chan string {
@@ -126,6 +159,10 @@ func OnResumeTask() <-chan struct{} {
 
 func OnStopTask() <-chan struct{} {
 	return onStopTask
+}
+
+func OnAbortBreaks() <-chan struct{} {
+	return onAbortBreaks
 }
 
 func SwitchTask(app gowid.IApp) {
@@ -158,8 +195,9 @@ func SwitchTask(app gowid.IApp) {
 	taskInputDialog.Open(appContainer, gowid.RenderWithRatio{R: 0.5}, app)
 }
 
-func Update(app gowid.IApp, task dto.TaskDTO) {
-	logrus.Infof("🔃ui#Update task:%v", task)
+func UpdateTask(app gowid.IApp, task dto.TaskDTO) {
+	currentMode = modeTask
+	logrus.Infof("🔃ui#UpdateTask task:%v", task)
 	keymaps := []*keymap{}
 	for _, action := range task.AvailableActions() {
 		keymaps = append(keymaps, convertTaskActionToKeymap(action))
@@ -171,15 +209,27 @@ func Update(app gowid.IApp, task dto.TaskDTO) {
 	}))
 }
 
-func convertTaskActionToKeymap(action dto.AvailableAction) *keymap {
+func UpdateBreaks(app gowid.IApp, b dto.BreaksDTO) {
+	currentMode = modeBreaks
+	logrus.Infof("🔃ui#UpdateBreaks breaks:%v", b)
+	keymaps := []*keymap{
+		NewKeymap("C-q", "to abort breaks"),
+	}
+	app.Run(gowid.RunFunction(func(app gowid.IApp) {
+		updateTimerText(app, fmt.Sprintf("☕ %s", b.RemainsTimerText()))
+		updateKeymaps(app, keymaps)
+	}))
+}
+
+func convertTaskActionToKeymap(action dto.AvailableTaskAction) *keymap {
 	switch action {
-	case dto.AvailableActionStart:
+	case dto.AvailableTaskActionStart:
 		return NewKeymap("C-e", "to start")
-	case dto.AvailableActionPause:
+	case dto.AvailableTaskActionPause:
 		return NewKeymap("C-p", "to pause")
-	case dto.AvailableActionResume:
+	case dto.AvailableTaskActionResume:
 		return NewKeymap("C-r", "to resume")
-	case dto.AvailableActionAbort:
+	case dto.AvailableTaskActionAbort:
 		return NewKeymap("C-q", "to abort")
 	}
 	return nil

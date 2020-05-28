@@ -15,23 +15,23 @@ const (
 	TaskStatusFinished = "finished"
 )
 
-type AvailableAction int
+type AvailableTaskAction int
 
 const (
-	AvailableActionStart = iota
-	AvailableActionPause
-	AvailableActionResume
-	AvailableActionAbort
+	AvailableTaskActionStart = iota
+	AvailableTaskActionPause
+	AvailableTaskActionResume
+	AvailableTaskActionAbort
 )
 
 type (
 	TaskDTO interface {
 		Name() string
 		Duration() int64
-		StartedAt() int64
+		StartedAt() *int64
 		Elapsed() int64
 		Status() string
-		AvailableActions() []AvailableAction
+		AvailableActions() []AvailableTaskAction
 		RemainsDuration() int64
 		RemainsTimerText() string
 	}
@@ -39,17 +39,17 @@ type (
 	taskDTO struct {
 		name             string
 		duration         int64
-		startedAt        int64
+		startedAt        *int64
 		elapsed          int64
 		status           string
-		availableActions []AvailableAction
+		availableActions []AvailableTaskAction
 	}
 )
 
 func NewTaskDTO() TaskDTO {
 	return &taskDTO{
 		status:           TaskStatusNone,
-		availableActions: []AvailableAction{},
+		availableActions: []AvailableTaskAction{},
 	}
 }
 
@@ -61,7 +61,7 @@ func (t *taskDTO) Duration() int64 {
 	return t.duration
 }
 
-func (t *taskDTO) StartedAt() int64 {
+func (t *taskDTO) StartedAt() *int64 {
 	return t.startedAt
 }
 
@@ -73,7 +73,7 @@ func (t *taskDTO) Status() string {
 	return t.status
 }
 
-func (t *taskDTO) AvailableActions() []AvailableAction {
+func (t *taskDTO) AvailableActions() []AvailableTaskAction {
 	return t.availableActions
 }
 
@@ -82,10 +82,10 @@ func (t *taskDTO) RemainsDuration() int64 {
 	switch t.Status() {
 	case TaskStatusPaused:
 		return duration - elapsed
-	case TaskStatusAborted:
+	case TaskStatusNone, TaskStatusAborted:
 		return duration
 	default:
-		to := startedAt + (duration - elapsed)
+		to := *startedAt + (duration - elapsed)
 		now := time.Now().UnixNano()
 		return to - now
 	}
@@ -97,14 +97,19 @@ func (t *taskDTO) RemainsTimerText() string {
 }
 
 func ConvertTaskToDTO(t task.Task) TaskDTO {
-	availableActions := []AvailableAction{}
+	availableActions := []AvailableTaskAction{}
 	for _, v := range t.AvailableActions() {
-		availableActions = append(availableActions, AvailableAction(v))
+		availableActions = append(availableActions, AvailableTaskAction(v))
+	}
+	var startedAt *int64
+	if t.StartedAt() != nil {
+		val := t.StartedAt().Value()
+		startedAt = &val
 	}
 	return &taskDTO{
 		t.Name().Value(),
 		int64(t.Duration()),
-		t.StartedAt().Value(),
+		startedAt,
 		int64(t.Elapsed()),
 		string(t.Status().Value()),
 		availableActions,

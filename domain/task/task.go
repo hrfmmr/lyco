@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	DefaultDuration = 25 * time.Minute
+	DefaultDuration = 5 * time.Second
 )
 
 type AvailableAction int
@@ -26,9 +26,9 @@ type (
 		Elapsed() time.Duration
 		Status() Status
 		// behaviors
-		Start(at time.Time)
+		Start(at time.Time) error
 		Pause()
-		Resume(at time.Time)
+		Resume(at time.Time) error
 		Stop()
 		// utils
 		AvailableActions() []AvailableAction
@@ -75,10 +75,15 @@ func (t *task) Status() Status {
 	return t.status
 }
 
-func (t *task) Start(at time.Time) {
+func (t *task) Start(at time.Time) error {
 	t.status.Update(NewStatus(TaskStatusRunning))
-	t.startedAt = NewStartedAt(at.UnixNano())
+	startedAt, err := NewStartedAt(at.UnixNano())
+	if err != nil {
+		return err
+	}
+	t.startedAt = startedAt
 	t.elapsed = 0
+	return nil
 }
 
 func (t *task) Pause() {
@@ -87,9 +92,14 @@ func (t *task) Pause() {
 	t.elapsed += time.Duration(now - t.startedAt.Value())
 }
 
-func (t *task) Resume(at time.Time) {
+func (t *task) Resume(at time.Time) error {
 	t.status.Update(NewStatus(TaskStatusRunning))
-	t.startedAt = NewStartedAt(at.UnixNano())
+	startedAt, err := NewStartedAt(at.UnixNano())
+	if err != nil {
+		return err
+	}
+	t.startedAt = startedAt
+	return nil
 }
 
 func (t *task) Stop() {

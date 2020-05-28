@@ -24,7 +24,9 @@ func (u *ResumeTaskUseCase) Execute(arg interface{}) error {
 		return errors.New("😕 [InvalidArgumentError] arg must be `task.Task`")
 	}
 	logrus.Infof("🐛ResumeTaskUseCase#Execute task:%v", task)
-	task.Resume(time.Now())
+	if err := task.Resume(time.Now()); err != nil {
+		return err
+	}
 	u.taskRepo.Save(task)
 	return nil
 }

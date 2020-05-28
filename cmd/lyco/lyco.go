@@ -7,6 +7,7 @@ import (
 	"github.com/gcla/gowid/examples"
 	"github.com/hrfmmr/lyco/application/dto"
 	"github.com/hrfmmr/lyco/di"
+	"github.com/hrfmmr/lyco/domain/breaks"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/ui"
 	"github.com/hrfmmr/lyco/utils/timer"
@@ -14,17 +15,22 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	longBreaksPerPoms = 4
+)
+
 var (
-	wg                sync.WaitGroup
-	app               *gowid.App
-	flow              gowid.RenderFlow
-	err               error
-	finCh             = make(chan struct{}, 1)
-	startTaskUseCase  = di.InitStartTaskUseCase()
-	pauseTaskUseCase  = di.InitPauseTaskUseCase()
-	resumeTaskUseCase = di.InitResumeTaskUseCase()
-	stopTaskUseCase   = di.InitStopTaskUseCase()
-	taskRepository    = di.ProvideTaskRepository()
+	wg                 sync.WaitGroup
+	app                *gowid.App
+	flow               gowid.RenderFlow
+	err                error
+	finCh              = make(chan struct{}, 1)
+	startTaskUseCase   = di.InitStartTaskUseCase()
+	pauseTaskUseCase   = di.InitPauseTaskUseCase()
+	resumeTaskUseCase  = di.InitResumeTaskUseCase()
+	stopTaskUseCase    = di.InitStopTaskUseCase()
+	abortBreaksUseCase = di.InitAbortBreaksUseCase()
+	taskRepository     = di.ProvideTaskRepository()
 )
 
 func main() {
@@ -38,6 +44,8 @@ func main() {
 		defer wg.Done()
 		appctx := di.InitAppContext()
 		tasktimer := timer.NewTaskTimer()
+		breakstimer := timer.NewBreaksTimer()
+		fincount := 0
 	Loop:
 		for {
 			select {
@@ -47,12 +55,12 @@ func main() {
 			case sg := <-appctx.OnChange():
 				logrus.Infof("♻ #main case <-appctx.OnChange")
 				task := sg.GetTask().State()
-				ui.Update(app, task)
+				ui.UpdateTask(app, task)
 			case s := <-ui.OnStartTask():
 				if t := taskRepository.GetCurrent(); t != nil && !t.CanStart() {
 					continue
 				}
-				logrus.Infof("🐛 ui.OnStartTask::taskName=%v", s)
+				logrus.Infof("🚀 ui.OnStartTask::taskName=%v", s)
 				taskName, err := task.NewName(s)
 				if err != nil {
 					logrus.Fatalf("💀 %v", err)
@@ -65,7 +73,7 @@ func main() {
 				tasktimer = timer.NewTaskTimer()
 				tasktimer.Start(t)
 			case <-ui.OnPauseTask():
-				logrus.Info("🐛 <-ui.OnPauseTask()")
+				logrus.Info("|| <-ui.OnPauseTask()")
 				t := taskRepository.GetCurrent()
 				if !t.CanPause() {
 					continue
@@ -75,7 +83,7 @@ func main() {
 				}
 				tasktimer.Stop()
 			case <-ui.OnResumeTask():
-				logrus.Info("🐛 <-ui.OnResumeTask()")
+				logrus.Info("▶ <-ui.OnResumeTask()")
 				t := taskRepository.GetCurrent()
 				if !t.CanResume() {
 					continue
@@ -86,7 +94,7 @@ func main() {
 				tasktimer = timer.NewTaskTimer()
 				tasktimer.Start(t)
 			case <-ui.OnStopTask():
-				logrus.Info("🐛 <-ui.OnStopTask()")
+				logrus.Info("🔴 <-ui.OnStopTask()")
 				t := taskRepository.GetCurrent()
 				if !t.CanAbort() {
 					continue
@@ -96,8 +104,47 @@ func main() {
 				}
 				tasktimer.Stop()
 			case task := <-tasktimer.Ticker():
-				logrus.Infof("♻ #main case task := <-tasktimer.Ticker()")
-				ui.Update(app, dto.ConvertTaskToDTO(task))
+				logrus.Infof("⏰ #main case task := <-tasktimer.Ticker()")
+				ui.UpdateTask(app, dto.ConvertTaskToDTO(task))
+			case <-tasktimer.OnFinished():
+				logrus.Infof("✔ #main case <-tasktimer.OnFinished()")
+				fincount++
+				b := breaks.ShortDefault()
+				if fincount > 0 && fincount%longBreaksPerPoms == 0 {
+					b = breaks.LongDefault()
+				}
+				if err := b.Start(); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				breakstimer = timer.NewBreaksTimer()
+				breakstimer.Start(b)
+			case b := <-breakstimer.Ticker():
+				logrus.Infof("⏰ #main case b := <-breakstimer.Ticker()")
+				ui.UpdateBreaks(app, dto.ConvertBreaksToDTO(b))
+			case <-breakstimer.OnFinished():
+				logrus.Infof("✔ #main case <-breakstimer.OnFinished()")
+				latest := taskRepository.GetCurrent()
+				if err := appctx.UseCase(startTaskUseCase).Execute(latest.Name()); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				t := taskRepository.GetCurrent()
+				tasktimer = timer.NewTaskTimer()
+				tasktimer.Start(t)
+			case <-ui.OnAbortBreaks():
+				if b := breakstimer.Breaks(); b != nil {
+					if b.IsStopped() {
+						continue
+					}
+					b.Stop()
+				}
+				logrus.Infof("🔴 #main case <-ui.OnAbortBreaks()")
+				breakstimer.Stop()
+				latest := taskRepository.GetCurrent()
+				if err := appctx.UseCase(abortBreaksUseCase).Execute(latest.Name()); err != nil {
+					logrus.Fatalf("💀 %v", err)
+				}
+				t := taskRepository.GetCurrent()
+				ui.UpdateTask(app, dto.ConvertTaskToDTO(t))
 			}
 		}
 	}(app)

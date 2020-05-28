@@ -1,4 +1,4 @@
-package task
+package breaks
 
 import (
 	"errors"
@@ -10,7 +10,8 @@ type (
 	StartedAt interface {
 		Value() int64
 	}
-	taskStartedAt struct {
+
+	startedAt struct {
 		value int64
 	}
 )
@@ -19,9 +20,9 @@ func NewStartedAt(value int64) (StartedAt, error) {
 	if len(strconv.FormatInt(value, 10)) != len(strconv.FormatInt(time.Now().UnixNano(), 10)) {
 		return nil, errors.New("😕 [InvalidArgumentError] value must be nano scale")
 	}
-	return &taskStartedAt{value}, nil
+	return &startedAt{value}, nil
 }
 
-func (s *taskStartedAt) Value() int64 {
+func (s *startedAt) Value() int64 {
 	return s.value
 }
