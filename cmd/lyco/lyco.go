@@ -10,6 +10,7 @@ import (
 	"github.com/hrfmmr/lyco/domain/breaks"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/ui"
+	"github.com/hrfmmr/lyco/utils/notifier"
 	"github.com/hrfmmr/lyco/utils/timer"
 
 	"github.com/sirupsen/logrus"
@@ -132,6 +133,7 @@ func main() {
 				}
 				breakstimer = timer.NewBreaksTimer()
 				breakstimer.Start(b)
+				notifier.NotifyForBreaksStart(notifier.New(), b)
 			case b := <-breakstimer.Ticker():
 				logrus.Infof("⏰ #main case b := <-breakstimer.Ticker()")
 				ui.UpdateBreaks(app, dto.ConvertBreaksToDTO(b))
@@ -144,6 +146,7 @@ func main() {
 				t := taskRepository.GetCurrent()
 				tasktimer = timer.NewTaskTimer()
 				tasktimer.Start(t)
+				notifier.NotifyForBreaksEnd(notifier.New(), t)
 			case <-ui.OnAbortBreaks():
 				if b := breakstimer.Breaks(); b != nil {
 					if b.IsStopped() {
