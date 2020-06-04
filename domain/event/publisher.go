@@ -19,7 +19,7 @@ func NewPublisher() Publisher {
 
 func (p *publisher) Publish(e Event) {
 	for _, s := range p.subscribers {
-		if e.Type()&(EventTypeAny|s.EventType()) > 0 {
+		if s.EventType()&(EventTypeAny|e.Type()) > 0 {
 			s.HandleEvent(e)
 		}
 	}

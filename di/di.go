@@ -8,13 +8,19 @@ import (
 	"github.com/hrfmmr/lyco/application"
 	"github.com/hrfmmr/lyco/application/store"
 	"github.com/hrfmmr/lyco/application/usecase"
+	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/infra"
 )
 
 var (
 	taskRepository = infra.NewTaskRepository()
+	eventPublisher = event.NewPublisher()
 )
+
+func ProvideEventPublisher() event.Publisher {
+	return eventPublisher
+}
 
 func ProvideTaskRepository() task.Repository {
 	return taskRepository
@@ -52,6 +58,7 @@ func InitStartTaskUseCase() *usecase.StartTaskUseCase {
 		wire.Build(
 			usecase.NewStartTaskUseCase,
 			ProvideTaskRepository,
+			ProvideEventPublisher,
 		),
 	)
 }

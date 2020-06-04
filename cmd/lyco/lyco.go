@@ -6,6 +6,7 @@ import (
 	"github.com/gcla/gowid"
 	"github.com/gcla/gowid/examples"
 	"github.com/hrfmmr/lyco/application/dto"
+	"github.com/hrfmmr/lyco/application/lifecycle"
 	"github.com/hrfmmr/lyco/di"
 	"github.com/hrfmmr/lyco/domain/breaks"
 	"github.com/hrfmmr/lyco/domain/task"
@@ -33,7 +34,14 @@ var (
 	switchTaskUseCase  = di.InitSwitchTaskUseCase()
 	abortBreaksUseCase = di.InitAbortBreaksUseCase()
 	taskRepository     = di.ProvideTaskRepository()
+	eventPublisher     = di.ProvideEventPublisher()
 )
+
+func init() {
+	eventPublisher.Subscribe(
+		lifecycle.NewLifecycleEventHub(),
+	)
+}
 
 func main() {
 	f := examples.RedirectLogger("lyco.log")
