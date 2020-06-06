@@ -34,11 +34,10 @@ var (
 	switchTaskUseCase  = di.InitSwitchTaskUseCase()
 	abortBreaksUseCase = di.InitAbortBreaksUseCase()
 	taskRepository     = di.ProvideTaskRepository()
-	eventPublisher     = di.ProvideEventPublisher()
 )
 
 func init() {
-	eventPublisher.Subscribe(
+	event.DefaultPublisher.Subscribe(
 		lifecycle.NewLifecycleEventHub(),
 	)
 }

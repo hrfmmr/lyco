@@ -18,10 +18,6 @@ var (
 	eventPublisher = event.NewPublisher()
 )
 
-func ProvideEventPublisher() event.Publisher {
-	return eventPublisher
-}
-
 func ProvideTaskRepository() task.Repository {
 	return taskRepository
 }
@@ -58,7 +54,6 @@ func InitStartTaskUseCase() *usecase.StartTaskUseCase {
 		wire.Build(
 			usecase.NewStartTaskUseCase,
 			ProvideTaskRepository,
-			ProvideEventPublisher,
 		),
 	)
 }

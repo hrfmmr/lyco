@@ -2,6 +2,8 @@ package task
 
 import (
 	"time"
+
+	"github.com/hrfmmr/lyco/domain/event"
 )
 
 const (
@@ -92,6 +94,12 @@ func (t *task) Start(at time.Time) error {
 		return err
 	}
 	t.startedAt = startedAt
+	event.DefaultPublisher.Publish(event.NewTaskStarted(
+		t.name.Value(),
+		t.startedAt.Value(),
+		t.duration,
+		t.elapsed,
+	))
 	return nil
 }
 

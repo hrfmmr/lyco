@@ -11,6 +11,10 @@ type (
 	}
 )
 
+var (
+	DefaultPublisher = NewPublisher()
+)
+
 func NewPublisher() Publisher {
 	return &publisher{
 		[]Subscriber{},
