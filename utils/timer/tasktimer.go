@@ -46,7 +46,7 @@ func (t *tasktimer) Start(m task.Task) {
 		}
 		t.finCh <- struct{}{}
 		t.cancel()
-	}(m.Duration() - m.Elapsed())
+	}(time.Duration(m.Duration().Value() - m.Elapsed().Value()))
 }
 
 func (t *tasktimer) Stop() {

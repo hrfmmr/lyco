@@ -109,9 +109,9 @@ func ConvertTaskToDTO(t task.Task) TaskDTO {
 	}
 	return &taskDTO{
 		t.Name().Value(),
-		int64(t.Duration()),
+		t.Duration().Value(),
 		startedAt,
-		int64(t.Elapsed()),
+		t.Elapsed().Value(),
 		string(t.Status().Value()),
 		availableActions,
 	}

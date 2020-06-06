@@ -24,7 +24,11 @@ func (u *StartTaskUseCase) Execute(arg interface{}) error {
 		return errors.New("😕 [InvalidArgumentError] arg must be `task.Name`")
 	}
 	logrus.Infof("🐛StartTaskUseCase#Execute name:%v", name)
-	task := task.NewTask(name, task.DefaultDuration)
+	d, err := task.NewDuration(int64(task.DefaultDuration))
+	if err != nil {
+		return err
+	}
+	task := task.NewTask(name, d)
 	if err := task.Start(time.Now()); err != nil {
 		return err
 	}

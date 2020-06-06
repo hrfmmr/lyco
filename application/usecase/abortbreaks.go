@@ -23,7 +23,11 @@ func (u *AbortBreaksUseCase) Execute(arg interface{}) error {
 		return errors.New("😕 [InvalidArgumentError] arg must be `task.Name`")
 	}
 	logrus.Infof("🐛AbortBreaksUseCase#Execute name:%v", name)
-	task := task.NewTask(name, task.DefaultDuration)
+	d, err := task.NewDuration(int64(task.DefaultDuration))
+	if err != nil {
+		return err
+	}
+	task := task.NewTask(name, d)
 	u.taskRepo.Save(task)
 	return nil
 }

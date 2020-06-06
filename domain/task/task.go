@@ -24,15 +24,15 @@ type (
 	Task interface {
 		// props
 		Name() Name
-		Duration() time.Duration
+		Duration() Duration
 		StartedAt() StartedAt
-		Elapsed() time.Duration
+		Elapsed() Elapsed
 		Status() Status
 		// behaviors
 		Start(at time.Time) error
-		Pause()
+		Pause() error
 		Resume(at time.Time) error
-		Stop()
+		Stop() error
 		// utils
 		AvailableActions() []AvailableAction
 		CanStart() bool
@@ -43,14 +43,14 @@ type (
 
 	task struct {
 		name      Name
-		duration  time.Duration
+		duration  Duration
 		startedAt StartedAt
-		elapsed   time.Duration
+		elapsed   Elapsed
 		status    Status
 	}
 )
 
-func NewTask(name Name, d time.Duration) Task {
+func NewTask(name Name, d Duration) Task {
 	return &task{
 		name:     name,
 		duration: d,
@@ -58,7 +58,7 @@ func NewTask(name Name, d time.Duration) Task {
 	}
 }
 
-func NewTaskWithElapsed(name Name, d, elapsed time.Duration) Task {
+func NewTaskWithElapsed(name Name, d Duration, elapsed Elapsed) Task {
 	return &task{
 		name:     name,
 		duration: d,
@@ -71,11 +71,11 @@ func (t *task) Name() Name {
 	return t.name
 }
 
-func (t *task) Duration() time.Duration {
+func (t *task) Duration() Duration {
 	return t.duration
 }
 
-func (t *task) Elapsed() time.Duration {
+func (t *task) Elapsed() Elapsed {
 	return t.elapsed
 }
 
@@ -97,16 +97,21 @@ func (t *task) Start(at time.Time) error {
 	event.DefaultPublisher.Publish(event.NewTaskStarted(
 		t.name.Value(),
 		t.startedAt.Value(),
-		t.duration,
-		t.elapsed,
+		time.Duration(t.duration.Value()),
+		time.Duration(t.elapsed.Value()),
 	))
 	return nil
 }
 
-func (t *task) Pause() {
+func (t *task) Pause() error {
 	t.status.Update(NewStatus(TaskStatusPaused))
 	now := time.Now().UnixNano()
-	t.elapsed += time.Duration(now - t.startedAt.Value())
+	elapsed, err := NewElapsed(t.elapsed.Value() + now - t.startedAt.Value())
+	if err != nil {
+		return err
+	}
+	t.elapsed = elapsed
+	return nil
 }
 
 func (t *task) Resume(at time.Time) error {
@@ -119,10 +124,15 @@ func (t *task) Resume(at time.Time) error {
 	return nil
 }
 
-func (t *task) Stop() {
+func (t *task) Stop() error {
 	t.status.Update(NewStatus(TaskStatusAborted))
 	now := time.Now().UnixNano()
-	t.elapsed += time.Duration(now - t.startedAt.Value())
+	elapsed, err := NewElapsed(t.elapsed.Value() + now - t.startedAt.Value())
+	if err != nil {
+		return err
+	}
+	t.elapsed = elapsed
+	return nil
 }
 
 func (t *task) AvailableActions() []AvailableAction {
@@ -155,7 +165,11 @@ func SwitchTask(current Task, to Name) (Task, error) {
 	if current.CanAbort() {
 		current.Stop()
 	}
-	t := NewTaskWithElapsed(to, DefaultDuration, current.Elapsed())
+	d, err := NewDuration(int64(DefaultDuration))
+	if err != nil {
+		return nil, err
+	}
+	t := NewTaskWithElapsed(to, d, current.Elapsed())
 	if err := t.Start(time.Now()); err != nil {
 		return nil, err
 	}

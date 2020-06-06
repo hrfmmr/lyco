@@ -9,6 +9,7 @@ import (
 	"github.com/hrfmmr/lyco/application/lifecycle"
 	"github.com/hrfmmr/lyco/di"
 	"github.com/hrfmmr/lyco/domain/breaks"
+	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/ui"
 	"github.com/hrfmmr/lyco/utils/notifier"
@@ -77,6 +78,9 @@ func main() {
 				if err := appctx.UseCase(startTaskUseCase).Execute(taskName); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
+				//TODO: ここから先のコードはTaskStartedEventProcessor側が仕切る🔨
+				//TODO: tasktimerはDomain Modelにする。
+				//TODO: tasktimerはRepositoryへの永続化とは無縁なので、di package側でsingletonインスタンスを生成して各所へDIして取り回す
 				t := taskRepository.GetCurrent()
 				tasktimer.Stop()
 				tasktimer = timer.NewTaskTimer()

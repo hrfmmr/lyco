@@ -37,7 +37,7 @@ func NotifyForBreaksStart(n Notifier, b breaks.Breaks) {
 }
 
 func NotifyForBreaksEnd(n Notifier, t task.Task) {
-	till := time.Unix(0, t.StartedAt().Value()+int64(t.Duration()))
+	till := time.Unix(0, t.StartedAt().Value()+t.Duration().Value())
 	n.Notify(
 		"[lyco] 🔨",
 		fmt.Sprintf("Work for %v till %v on %s", t.Duration(), till.Format("15:04"), t.Name().Value()),
