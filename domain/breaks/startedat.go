@@ -18,7 +18,7 @@ type (
 
 func NewStartedAt(value int64) (StartedAt, error) {
 	if len(strconv.FormatInt(value, 10)) != len(strconv.FormatInt(time.Now().UnixNano(), 10)) {
-		return nil, errors.New("😕 [InvalidArgumentError] value must be nano scale")
+		return nil, errors.New("😕 [InvalidArgumentError] breaks.StartedAt value must be nano scale")
 	}
 	return &startedAt{value}, nil
 }

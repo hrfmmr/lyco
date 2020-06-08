@@ -2,7 +2,6 @@ package task
 
 import (
 	"errors"
-	"strconv"
 	"time"
 )
 
@@ -16,8 +15,8 @@ type (
 )
 
 func NewElapsed(value int64) (Elapsed, error) {
-	if len(strconv.FormatInt(value, 10)) != len(strconv.FormatInt(time.Now().UnixNano(), 10)) {
-		return nil, errors.New("😕 [InvalidArgumentError] value must be nano scale")
+	if value != value/int64(time.Nanosecond) {
+		return nil, errors.New("😕 [InvalidArgumentError] task.Elapsed value must be nano scale")
 	}
 	return &taskElapsed{value}, nil
 }
