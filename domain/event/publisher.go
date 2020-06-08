@@ -3,7 +3,7 @@ package event
 type (
 	Publisher interface {
 		Publish(e Event)
-		Subscribe(s Subscriber)
+		Subscribe(subscribers ...Subscriber)
 	}
 
 	publisher struct {
@@ -29,6 +29,6 @@ func (p *publisher) Publish(e Event) {
 	}
 }
 
-func (p *publisher) Subscribe(s Subscriber) {
-	p.subscribers = append(p.subscribers, s)
+func (p *publisher) Subscribe(subscribers ...Subscriber) {
+	p.subscribers = subscribers
 }

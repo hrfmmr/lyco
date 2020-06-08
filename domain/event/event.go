@@ -6,6 +6,8 @@ type EventType int
 const (
 	EventTypeAny EventType = 1 << (iota + 1)
 	EventTypeTaskStarted
+	EventTypeTimerTicked
+	EventTypeTimerFinished
 )
 
 type Event interface {

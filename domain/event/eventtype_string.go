@@ -10,11 +10,15 @@ func _() {
 	var x [1]struct{}
 	_ = x[EventTypeAny-2]
 	_ = x[EventTypeTaskStarted-4]
+	_ = x[EventTypeTimerTicked-8]
+	_ = x[EventTypeTimerFinished-16]
 }
 
 const (
 	_EventType_name_0 = "EventTypeAny"
 	_EventType_name_1 = "EventTypeTaskStarted"
+	_EventType_name_2 = "EventTypeTimerTicked"
+	_EventType_name_3 = "EventTypeTimerFinished"
 )
 
 func (i EventType) String() string {
@@ -23,6 +27,10 @@ func (i EventType) String() string {
 		return _EventType_name_0
 	case i == 4:
 		return _EventType_name_1
+	case i == 8:
+		return _EventType_name_2
+	case i == 16:
+		return _EventType_name_3
 	default:
 		return "EventType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

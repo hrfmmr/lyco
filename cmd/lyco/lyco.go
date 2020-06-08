@@ -34,12 +34,16 @@ var (
 	stopTaskUseCase    = di.InitStopTaskUseCase()
 	switchTaskUseCase  = di.InitSwitchTaskUseCase()
 	abortBreaksUseCase = di.InitAbortBreaksUseCase()
+	timerstarter       = di.InitTimerStarter()
+	timerstateupdater  = di.InitTimerStateUpdater()
 	taskRepository     = di.ProvideTaskRepository()
 )
 
 func init() {
 	event.DefaultPublisher.Subscribe(
 		lifecycle.NewLifecycleEventHub(),
+		timerstarter,
+		timerstateupdater,
 	)
 }
 
@@ -78,10 +82,6 @@ func main() {
 				if err := appctx.UseCase(startTaskUseCase).Execute(taskName); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
-				t := taskRepository.GetCurrent()
-				tasktimer.Stop()
-				tasktimer = timer.NewTaskTimer()
-				tasktimer.Start(t)
 			case <-ui.OnPauseTask():
 				logrus.Info("|| <-ui.OnPauseTask()")
 				t := taskRepository.GetCurrent()

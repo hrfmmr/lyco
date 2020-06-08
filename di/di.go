@@ -6,29 +6,34 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/hrfmmr/lyco/application"
+	"github.com/hrfmmr/lyco/application/eventprocessor"
 	"github.com/hrfmmr/lyco/application/store"
 	"github.com/hrfmmr/lyco/application/usecase"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
+	"github.com/hrfmmr/lyco/domain/timer"
 	"github.com/hrfmmr/lyco/infra"
 )
 
 var (
+	pomodorotimer  = timer.NewTimer()
 	taskRepository = infra.NewTaskRepository()
+	taskStore      = store.NewTaskStore(
+		taskRepository,
+	)
 	eventPublisher = event.NewPublisher()
 )
+
+func provideTimer() timer.Timer {
+	return pomodorotimer
+}
 
 func ProvideTaskRepository() task.Repository {
 	return taskRepository
 }
 
 func provideTaskStore() store.TaskStore {
-	panic(
-		wire.Build(
-			store.NewTaskStore,
-			ProvideTaskRepository,
-		),
-	)
+	return taskStore
 }
 
 func provideStoreGroup() store.StoreGroup {
@@ -98,6 +103,25 @@ func InitAbortBreaksUseCase() *usecase.AbortBreaksUseCase {
 	panic(
 		wire.Build(
 			usecase.NewAbortBreaksUseCase,
+			ProvideTaskRepository,
+		),
+	)
+}
+
+func InitTimerStarter() *eventprocessor.TimerStarter {
+	panic(
+		wire.Build(
+			eventprocessor.NewTimerStarter,
+			provideTimer,
+		),
+	)
+}
+
+func InitTimerStateUpdater() *eventprocessor.TimerStateUpdater {
+	panic(
+		wire.Build(
+			eventprocessor.NewTimerStateUpdater,
+			provideTaskStore,
 			ProvideTaskRepository,
 		),
 	)
