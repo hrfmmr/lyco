@@ -94,11 +94,11 @@ func (t *task) Start(at time.Time) error {
 		return err
 	}
 	t.startedAt = startedAt
-	event.DefaultPublisher.Publish(event.NewTaskStarted(
-		t.name.Value(),
-		t.startedAt.Value(),
-		time.Duration(t.duration.Value()),
-		time.Duration(t.elapsed.Value()),
+	event.DefaultPublisher.Publish(NewTaskStarted(
+		t.name,
+		t.startedAt,
+		t.duration,
+		t.elapsed,
 	))
 	return nil
 }
