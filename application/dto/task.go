@@ -15,15 +15,15 @@ const (
 	TaskStatusFinished = "finished"
 )
 
-type AvailableTaskAction int
+// type AvailableTaskAction int
 
-const (
-	AvailableTaskActionStart = iota
-	AvailableTaskActionPause
-	AvailableTaskActionResume
-	AvailableTaskActionAbort
-	AvailableTaskActionSwitch
-)
+// const (
+// AvailableTaskActionStart = iota
+// AvailableTaskActionPause
+// AvailableTaskActionResume
+// AvailableTaskActionAbort
+// AvailableTaskActionSwitch
+// )
 
 type (
 	TaskDTO interface {

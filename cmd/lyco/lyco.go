@@ -64,8 +64,8 @@ func main() {
 				break Loop
 			case sg := <-appctx.OnChange():
 				logrus.Infof("♻ #main case <-appctx.OnChange")
-				task := sg.GetTask().State()
-				ui.UpdateTask(app, task)
+				task := sg.GetTask()
+				ui.UpdateTask2(app, task)
 			case s := <-ui.OnStartTask():
 				if t := taskRepository.GetCurrent(); t != nil && !t.CanStart() {
 					continue
@@ -78,9 +78,6 @@ func main() {
 				if err := appctx.UseCase(startTaskUseCase).Execute(taskName); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
-				//TODO: ここから先のコードはTaskStartedEventProcessor側が仕切る🔨
-				//TODO: tasktimerはDomain Modelにする。
-				//TODO: tasktimerはRepositoryへの永続化とは無縁なので、di package側でsingletonインスタンスを生成して各所へDIして取り回す
 				t := taskRepository.GetCurrent()
 				tasktimer.Stop()
 				tasktimer = timer.NewTaskTimer()

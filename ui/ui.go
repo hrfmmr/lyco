@@ -217,6 +217,21 @@ func showTaskInputDialog(app gowid.IApp, bootstrap bool) {
 	taskInputDialog.Open(appContainer, gowid.RenderWithRatio{R: 0.5}, app)
 }
 
+func UpdateTask2(app gowid.IApp, task dto.TaskState) {
+	currentMode = modeTask
+	logrus.Infof("🔃ui#UpdateTask2 task:%v", task)
+	keymaps := []*keymap{}
+	for _, action := range task.AvailableActions() {
+		keymaps = append(keymaps, convertTaskActionToKeymap(action))
+	}
+	app.Run(gowid.RunFunction(func(app gowid.IApp) {
+		updateTaskText(app, task.TaskName())
+		updateTimerText(app, task.RemainsTimerText())
+		updateKeymaps(app, keymaps)
+	}))
+}
+
+//TODO: remove
 func UpdateTask(app gowid.IApp, task dto.TaskDTO) {
 	currentMode = modeTask
 	logrus.Infof("🔃ui#UpdateTask task:%v", task)
@@ -231,6 +246,7 @@ func UpdateTask(app gowid.IApp, task dto.TaskDTO) {
 	}))
 }
 
+//TODO: remove
 func UpdateBreaks(app gowid.IApp, b dto.BreaksDTO) {
 	currentMode = modeBreaks
 	logrus.Infof("🔃ui#UpdateBreaks breaks:%v", b)

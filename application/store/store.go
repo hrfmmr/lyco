@@ -6,4 +6,5 @@ import (
 
 type Store interface {
 	RecvPayload(p usecase.Payload)
+	OnChange() <-chan Store
 }
