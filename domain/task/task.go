@@ -51,9 +51,11 @@ type (
 )
 
 func NewTask(name Name, d Duration) Task {
+	elapsed, _ := NewElapsed(0)
 	return &task{
 		name:     name,
 		duration: d,
+		elapsed:  elapsed,
 		status:   NewStatus(TaskStatusNone),
 	}
 }
