@@ -111,6 +111,9 @@ func (t *task) Start(at time.Time) error {
 }
 
 func (t *task) Pause() error {
+	if !t.CanPause() {
+		return NewInvalidStatusTransition(fmt.Sprintf("❗Can't Pause from task status:%v", t.status.Value()))
+	}
 	if err := t.status.Update(NewStatus(TaskStatusPaused)); err != nil {
 		return err
 	}

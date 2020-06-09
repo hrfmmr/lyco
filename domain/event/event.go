@@ -6,6 +6,7 @@ type EventType int
 const (
 	EventTypeAny EventType = 1 << (iota + 1)
 	EventTypeTaskStarted
+	EventTypeTaskPaused
 	EventTypeTimerTicked
 	EventTypeTimerFinished
 )

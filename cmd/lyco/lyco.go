@@ -76,11 +76,7 @@ func main() {
 				}
 			case <-ui.OnPauseTask():
 				logrus.Info("|| <-ui.OnPauseTask()")
-				t := taskRepository.GetCurrent()
-				if !t.CanPause() {
-					continue
-				}
-				if err := appctx.UseCase(pauseTaskUseCase).Execute(t); err != nil {
+				if err := appctx.UseCase(pauseTaskUseCase).Execute(nil); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
 			case <-ui.OnResumeTask():

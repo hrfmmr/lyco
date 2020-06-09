@@ -1,29 +1,30 @@
 package usecase
 
 import (
-	"errors"
-
 	"github.com/hrfmmr/lyco/domain/task"
-	"github.com/sirupsen/logrus"
+	"github.com/hrfmmr/lyco/domain/timer"
 )
 
 type PauseTaskUseCase struct {
-	taskRepo task.Repository
+	pomodorotimer  timer.Timer
+	taskRepository task.Repository
 }
 
-func NewPauseTaskUseCase(taskRepo task.Repository) *PauseTaskUseCase {
+func NewPauseTaskUseCase(pomodorotimer timer.Timer, taskRepository task.Repository) *PauseTaskUseCase {
 	return &PauseTaskUseCase{
-		taskRepo,
+		pomodorotimer,
+		taskRepository,
 	}
 }
 
 func (u *PauseTaskUseCase) Execute(arg interface{}) error {
-	task, ok := arg.(task.Task)
-	if !ok {
-		return errors.New("😕 [InvalidArgumentError] arg must be `task.Task`")
+	t := u.taskRepository.GetCurrent()
+	if !t.CanPause() {
+		// ignore
+		return nil
 	}
-	logrus.Infof("🐛PauseTaskUseCase#Execute task:%v", task)
-	task.Pause()
-	u.taskRepo.Save(task)
+	t.Pause()
+	u.taskRepository.Save(t)
+	u.pomodorotimer.Stop()
 	return nil
 }
