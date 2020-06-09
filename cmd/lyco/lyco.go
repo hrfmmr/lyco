@@ -34,7 +34,6 @@ var (
 	stopTaskUseCase    = di.InitStopTaskUseCase()
 	switchTaskUseCase  = di.InitSwitchTaskUseCase()
 	abortBreaksUseCase = di.InitAbortBreaksUseCase()
-	timerstarter       = di.InitTimerStarter()
 	timerstateupdater  = di.InitTimerStateUpdater()
 	taskRepository     = di.ProvideTaskRepository()
 )
@@ -42,7 +41,6 @@ var (
 func init() {
 	event.DefaultPublisher.Subscribe(
 		lifecycle.NewLifecycleEventHub(),
-		timerstarter,
 		timerstateupdater,
 	)
 }

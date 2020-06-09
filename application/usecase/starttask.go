@@ -5,16 +5,19 @@ import (
 	"time"
 
 	"github.com/hrfmmr/lyco/domain/task"
+	"github.com/hrfmmr/lyco/domain/timer"
 	"github.com/sirupsen/logrus"
 )
 
 type StartTaskUseCase struct {
-	taskRepo task.Repository
+	pomodorotimer  timer.Timer
+	taskRepository task.Repository
 }
 
-func NewStartTaskUseCase(taskRepo task.Repository) *StartTaskUseCase {
+func NewStartTaskUseCase(pomodorotimer timer.Timer, taskRepository task.Repository) *StartTaskUseCase {
 	return &StartTaskUseCase{
-		taskRepo,
+		pomodorotimer,
+		taskRepository,
 	}
 }
 
@@ -32,6 +35,7 @@ func (u *StartTaskUseCase) Execute(arg interface{}) error {
 	if err := task.Start(time.Now()); err != nil {
 		return err
 	}
-	u.taskRepo.Save(task)
+	u.taskRepository.Save(task)
+	u.pomodorotimer.Start(task.Duration(), task.Elapsed())
 	return nil
 }

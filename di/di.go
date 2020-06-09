@@ -58,6 +58,7 @@ func InitStartTaskUseCase() *usecase.StartTaskUseCase {
 	panic(
 		wire.Build(
 			usecase.NewStartTaskUseCase,
+			provideTimer,
 			ProvideTaskRepository,
 		),
 	)
@@ -104,15 +105,6 @@ func InitAbortBreaksUseCase() *usecase.AbortBreaksUseCase {
 		wire.Build(
 			usecase.NewAbortBreaksUseCase,
 			ProvideTaskRepository,
-		),
-	)
-}
-
-func InitTimerStarter() *eventprocessor.TimerStarter {
-	panic(
-		wire.Build(
-			eventprocessor.NewTimerStarter,
-			provideTimer,
 		),
 	)
 }
