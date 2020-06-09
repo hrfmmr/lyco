@@ -24,12 +24,12 @@ func (e *useCaseExecutor) UseCase() UseCase {
 }
 
 func (e *useCaseExecutor) Execute(arg interface{}) error {
-	e.willExecuteChan <- NewWillExecutePayload()
+	e.willExecuteChan <- NewWillExecutePayload(arg)
 	err := e.useCase.Execute(arg)
 	if err != nil {
 		return err
 	}
-	e.didExecuteChan <- NewDidExecutePayload()
+	e.didExecuteChan <- NewDidExecutePayload(arg)
 	return nil
 }
 
