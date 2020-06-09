@@ -267,8 +267,8 @@ func convertTaskActionToKeymap(action dto.AvailableTaskAction) *keymap {
 		return NewKeymap("C-p", "to pause")
 	case dto.AvailableTaskActionResume:
 		return NewKeymap("C-r", "to resume")
-	case dto.AvailableTaskActionAbort:
-		return NewKeymap("C-q", "to abort")
+	case dto.AvailableTaskActionStop:
+		return NewKeymap("C-q", "to stop")
 	case dto.AvailableTaskActionSwitch:
 		return NewKeymap("C-s", "to switch")
 	}

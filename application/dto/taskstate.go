@@ -17,7 +17,7 @@ const (
 	AvailableTaskActionStart AvailableTaskAction = iota
 	AvailableTaskActionPause
 	AvailableTaskActionResume
-	AvailableTaskActionAbort
+	AvailableTaskActionStop
 	AvailableTaskActionSwitch
 	AvailableTaskActionAbortBreaks
 )
@@ -94,8 +94,8 @@ func (s *tstate) AvailableActions() []AvailableTaskAction {
 			actions = append(actions, AvailableTaskActionPause)
 		case task.AvailableActionResume:
 			actions = append(actions, AvailableTaskActionResume)
-		case task.AvailableActionAbort:
-			actions = append(actions, AvailableTaskActionAbort)
+		case task.AvailableActionStop:
+			actions = append(actions, AvailableTaskActionStop)
 		case task.AvailableActionSwitch:
 			actions = append(actions, AvailableTaskActionSwitch)
 		}

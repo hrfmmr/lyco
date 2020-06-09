@@ -11,14 +11,14 @@ func _() {
 	_ = x[AvailableTaskActionStart-0]
 	_ = x[AvailableTaskActionPause-1]
 	_ = x[AvailableTaskActionResume-2]
-	_ = x[AvailableTaskActionAbort-3]
+	_ = x[AvailableTaskActionStop-3]
 	_ = x[AvailableTaskActionSwitch-4]
 	_ = x[AvailableTaskActionAbortBreaks-5]
 }
 
-const _AvailableTaskAction_name = "AvailableTaskActionStartAvailableTaskActionPauseAvailableTaskActionResumeAvailableTaskActionAbortAvailableTaskActionSwitchAvailableTaskActionAbortBreaks"
+const _AvailableTaskAction_name = "AvailableTaskActionStartAvailableTaskActionPauseAvailableTaskActionResumeAvailableTaskActionStopAvailableTaskActionSwitchAvailableTaskActionAbortBreaks"
 
-var _AvailableTaskAction_index = [...]uint8{0, 24, 48, 73, 97, 122, 152}
+var _AvailableTaskAction_index = [...]uint8{0, 24, 48, 73, 96, 121, 151}
 
 func (i AvailableTaskAction) String() string {
 	if i < 0 || i >= AvailableTaskAction(len(_AvailableTaskAction_index)-1) {

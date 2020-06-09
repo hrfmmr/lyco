@@ -17,7 +17,7 @@ const (
 	AvailableActionStart = iota
 	AvailableActionPause
 	AvailableActionResume
-	AvailableActionAbort
+	AvailableActionStop
 	AvailableActionSwitch
 )
 
@@ -38,7 +38,7 @@ type (
 		CanStart() bool
 		CanPause() bool
 		CanResume() bool
-		CanAbort() bool
+		CanStop() bool
 	}
 
 	task struct {
@@ -159,6 +159,12 @@ func (t *task) Stop() error {
 		return err
 	}
 	t.elapsed = elapsed
+	event.DefaultPublisher.Publish(NewTaskStopped(
+		t.name,
+		t.startedAt,
+		t.duration,
+		t.elapsed,
+	))
 	return nil
 }
 
@@ -172,13 +178,13 @@ func (t *task) AvailableActions() []AvailableAction {
 	case TaskStatusRunning:
 		return []AvailableAction{
 			AvailableActionPause,
-			AvailableActionAbort,
+			AvailableActionStop,
 			AvailableActionSwitch,
 		}
 	case TaskStatusPaused:
 		return []AvailableAction{
 			AvailableActionResume,
-			AvailableActionAbort,
+			AvailableActionStop,
 			AvailableActionSwitch,
 		}
 	default:
@@ -189,7 +195,7 @@ func (t *task) AvailableActions() []AvailableAction {
 }
 
 func SwitchTask(current Task, to Name) (Task, error) {
-	if current.CanAbort() {
+	if current.CanStop() {
 		current.Stop()
 	}
 	d, err := NewDuration(int64(DefaultDuration))
@@ -215,8 +221,8 @@ func (t *task) CanResume() bool {
 	return t.hasAvailableAction(AvailableActionResume)
 }
 
-func (t *task) CanAbort() bool {
-	return t.hasAvailableAction(AvailableActionAbort)
+func (t *task) CanStop() bool {
+	return t.hasAvailableAction(AvailableActionStop)
 }
 
 func (t *task) hasAvailableAction(action AvailableAction) bool {

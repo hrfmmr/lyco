@@ -88,6 +88,7 @@ func InitStopTaskUseCase() *usecase.StopTaskUseCase {
 	panic(
 		wire.Build(
 			usecase.NewStopTaskUseCase,
+			provideTimer,
 			ProvideTaskRepository,
 		),
 	)

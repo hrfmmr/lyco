@@ -86,14 +86,9 @@ func main() {
 				}
 			case <-ui.OnStopTask():
 				logrus.Info("🔴 <-ui.OnStopTask()")
-				t := taskRepository.GetCurrent()
-				if !t.CanAbort() {
-					continue
-				}
-				if err := appctx.UseCase(stopTaskUseCase).Execute(t); err != nil {
+				if err := appctx.UseCase(stopTaskUseCase).Execute(nil); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
-				tasktimer.Stop()
 			case s := <-ui.OnSwitchTask():
 				logrus.Info("🔄 <-ui.OnSwitchTask()")
 				taskName, err := task.NewName(s)
