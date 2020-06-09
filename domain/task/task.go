@@ -1,6 +1,7 @@
 package task
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/hrfmmr/lyco/domain/event"
@@ -28,13 +29,12 @@ type (
 		StartedAt() StartedAt
 		Elapsed() Elapsed
 		Status() Status
+		AvailableActions() []AvailableAction
 		// behaviors
 		Start(at time.Time) error
 		Pause() error
 		Resume(at time.Time) error
 		Stop() error
-		// utils
-		AvailableActions() []AvailableAction
 		CanStart() bool
 		CanPause() bool
 		CanResume() bool
@@ -90,7 +90,12 @@ func (t *task) Status() Status {
 }
 
 func (t *task) Start(at time.Time) error {
-	t.status.Update(NewStatus(TaskStatusRunning))
+	if !t.CanStart() {
+		return NewInvalidStatusTransition(fmt.Sprintf("❗Can't Start from task status:%v", t.status.Value()))
+	}
+	if err := t.status.Update(NewStatus(TaskStatusRunning)); err != nil {
+		return err
+	}
 	startedAt, err := NewStartedAt(at.UnixNano())
 	if err != nil {
 		return err
@@ -106,13 +111,21 @@ func (t *task) Start(at time.Time) error {
 }
 
 func (t *task) Pause() error {
-	t.status.Update(NewStatus(TaskStatusPaused))
+	if err := t.status.Update(NewStatus(TaskStatusPaused)); err != nil {
+		return err
+	}
 	now := time.Now().UnixNano()
 	elapsed, err := NewElapsed(t.elapsed.Value() + now - t.startedAt.Value())
 	if err != nil {
 		return err
 	}
 	t.elapsed = elapsed
+	event.DefaultPublisher.Publish(NewTaskPaused(
+		t.name,
+		t.startedAt,
+		t.duration,
+		t.elapsed,
+	))
 	return nil
 }
 

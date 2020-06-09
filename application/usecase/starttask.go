@@ -1,17 +1,47 @@
 package usecase
 
 import (
+	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/domain/timer"
-	"github.com/sirupsen/logrus"
 )
 
-type StartTaskUseCase struct {
-	pomodorotimer  timer.Timer
-	taskRepository task.Repository
+type (
+	StartTaskPayload struct {
+		taskName     string
+		taskDuration time.Duration
+	}
+
+	StartTaskUseCase struct {
+		pomodorotimer  timer.Timer
+		taskRepository task.Repository
+	}
+)
+
+func NewStartTaskPayload(name string, duration time.Duration) *StartTaskPayload {
+	return &StartTaskPayload{
+		name,
+		duration,
+	}
+}
+
+func (p *StartTaskPayload) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		Name     string `json:"name"`
+		Duration string `json:"duration"`
+	}{
+		p.taskName,
+		p.taskDuration.String(),
+	})
+}
+
+func (p *StartTaskPayload) String() string {
+	b, _ := json.Marshal(p)
+	return string(b)
 }
 
 func NewStartTaskUseCase(pomodorotimer timer.Timer, taskRepository task.Repository) *StartTaskUseCase {
@@ -22,20 +52,27 @@ func NewStartTaskUseCase(pomodorotimer timer.Timer, taskRepository task.Reposito
 }
 
 func (u *StartTaskUseCase) Execute(arg interface{}) error {
-	name, ok := arg.(task.Name)
-	if !ok {
-		return errors.New("😕 [InvalidArgumentError] arg must be `task.Name`")
+	if t := u.taskRepository.GetCurrent(); t != nil && !t.CanStart() {
+		// ignore
+		return nil
 	}
-	logrus.Infof("🐛StartTaskUseCase#Execute name:%v", name)
-	d, err := task.NewDuration(int64(task.DefaultDuration))
+	p, ok := arg.(*StartTaskPayload)
+	if !ok {
+		return errors.New(fmt.Sprintf("😕 arg:%T must be `*StartTaskPayload`", arg))
+	}
+	n, err := task.NewName(p.taskName)
 	if err != nil {
 		return err
 	}
-	task := task.NewTask(name, d)
-	if err := task.Start(time.Now()); err != nil {
+	d, err := task.NewDuration(int64(p.taskDuration))
+	if err != nil {
 		return err
 	}
-	u.taskRepository.Save(task)
-	u.pomodorotimer.Start(task.Duration(), task.Elapsed())
+	t := task.NewTask(n, d)
+	if err := t.Start(time.Now()); err != nil {
+		return err
+	}
+	u.taskRepository.Save(t)
+	u.pomodorotimer.Start(t.Duration(), t.Elapsed())
 	return nil
 }

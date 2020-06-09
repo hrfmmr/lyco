@@ -7,6 +7,7 @@ import (
 	"github.com/gcla/gowid/examples"
 	"github.com/hrfmmr/lyco/application/dto"
 	"github.com/hrfmmr/lyco/application/lifecycle"
+	"github.com/hrfmmr/lyco/application/usecase"
 	"github.com/hrfmmr/lyco/di"
 	"github.com/hrfmmr/lyco/domain/breaks"
 	"github.com/hrfmmr/lyco/domain/event"
@@ -69,15 +70,8 @@ func main() {
 				task := sg.GetTask()
 				ui.UpdateTask2(app, task)
 			case s := <-ui.OnStartTask():
-				if t := taskRepository.GetCurrent(); t != nil && !t.CanStart() {
-					continue
-				}
-				logrus.Infof("🚀 ui.OnStartTask::taskName=%v", s)
-				taskName, err := task.NewName(s)
-				if err != nil {
-					logrus.Fatalf("💀 %v", err)
-				}
-				if err := appctx.UseCase(startTaskUseCase).Execute(taskName); err != nil {
+				p := usecase.NewStartTaskPayload(s, task.DefaultDuration)
+				if err := appctx.UseCase(startTaskUseCase).Execute(p); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
 			case <-ui.OnPauseTask():
@@ -89,7 +83,6 @@ func main() {
 				if err := appctx.UseCase(pauseTaskUseCase).Execute(t); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
-				tasktimer.Stop()
 			case <-ui.OnResumeTask():
 				logrus.Info("▶ <-ui.OnResumeTask()")
 				t := taskRepository.GetCurrent()
