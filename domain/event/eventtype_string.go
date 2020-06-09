@@ -11,16 +11,18 @@ func _() {
 	_ = x[EventTypeAny-2]
 	_ = x[EventTypeTaskStarted-4]
 	_ = x[EventTypeTaskPaused-8]
-	_ = x[EventTypeTimerTicked-16]
-	_ = x[EventTypeTimerFinished-32]
+	_ = x[EventTypeTaskResumed-16]
+	_ = x[EventTypeTimerTicked-32]
+	_ = x[EventTypeTimerFinished-64]
 }
 
 const (
 	_EventType_name_0 = "EventTypeAny"
 	_EventType_name_1 = "EventTypeTaskStarted"
 	_EventType_name_2 = "EventTypeTaskPaused"
-	_EventType_name_3 = "EventTypeTimerTicked"
-	_EventType_name_4 = "EventTypeTimerFinished"
+	_EventType_name_3 = "EventTypeTaskResumed"
+	_EventType_name_4 = "EventTypeTimerTicked"
+	_EventType_name_5 = "EventTypeTimerFinished"
 )
 
 func (i EventType) String() string {
@@ -35,6 +37,8 @@ func (i EventType) String() string {
 		return _EventType_name_3
 	case i == 32:
 		return _EventType_name_4
+	case i == 64:
+		return _EventType_name_5
 	default:
 		return "EventType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

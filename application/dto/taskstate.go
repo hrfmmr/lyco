@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -9,10 +10,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate stringer -type=AvailableTaskAction
 type AvailableTaskAction int
 
 const (
-	AvailableTaskActionStart = iota
+	AvailableTaskActionStart AvailableTaskAction = iota
 	AvailableTaskActionPause
 	AvailableTaskActionResume
 	AvailableTaskActionAbort
@@ -90,6 +92,8 @@ func (s *tstate) AvailableActions() []AvailableTaskAction {
 			actions = append(actions, AvailableTaskActionStart)
 		case task.AvailableActionPause:
 			actions = append(actions, AvailableTaskActionPause)
+		case task.AvailableActionResume:
+			actions = append(actions, AvailableTaskActionResume)
 		case task.AvailableActionAbort:
 			actions = append(actions, AvailableTaskActionAbort)
 		case task.AvailableActionSwitch:
@@ -97,6 +101,23 @@ func (s *tstate) AvailableActions() []AvailableTaskAction {
 		}
 	}
 	return actions
+}
+
+func (s *tstate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		TaskName         string `json:"task_name"`
+		RemainsTimerText string `json:"remains_timer_text"`
+		AvailableActions string `json:"available_actions"`
+	}{
+		s.TaskName(),
+		s.RemainsTimerText(),
+		fmt.Sprintf("%v", s.AvailableActions()),
+	})
+}
+
+func (s *tstate) String() string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 //===============================================================
@@ -127,6 +148,23 @@ func (s *bstate) AvailableActions() []AvailableTaskAction {
 	return []AvailableTaskAction{
 		AvailableTaskActionAbortBreaks,
 	}
+}
+
+func (s *bstate) MarshalJSON() ([]byte, error) {
+	return json.Marshal(struct {
+		TaskName         string `json:"task_name"`
+		RemainsTimerText string `json:"remains_timer_text"`
+		AvailableActions string `json:"available_actions"`
+	}{
+		s.TaskName(),
+		s.RemainsTimerText(),
+		fmt.Sprintf("%v", s.AvailableActions()),
+	})
+}
+
+func (s *bstate) String() string {
+	b, _ := json.Marshal(s)
+	return string(b)
 }
 
 //===============================================================

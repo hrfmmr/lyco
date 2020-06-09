@@ -133,12 +133,21 @@ func (t *task) Pause() error {
 }
 
 func (t *task) Resume(at time.Time) error {
+	if !t.CanResume() {
+		return NewInvalidStatusTransition(fmt.Sprintf("❗Can't Resume from task status:%v", t.status.Value()))
+	}
 	t.status.Update(NewStatus(TaskStatusRunning))
 	startedAt, err := NewStartedAt(at.UnixNano())
 	if err != nil {
 		return err
 	}
 	t.startedAt = startedAt
+	event.DefaultPublisher.Publish(NewTaskResumed(
+		t.name,
+		t.startedAt,
+		t.duration,
+		t.elapsed,
+	))
 	return nil
 }
 

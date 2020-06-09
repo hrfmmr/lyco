@@ -7,6 +7,7 @@ const (
 	EventTypeAny EventType = 1 << (iota + 1)
 	EventTypeTaskStarted
 	EventTypeTaskPaused
+	EventTypeTaskResumed
 	EventTypeTimerTicked
 	EventTypeTimerFinished
 )

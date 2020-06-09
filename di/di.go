@@ -78,6 +78,7 @@ func InitResumeTaskUseCase() *usecase.ResumeTaskUseCase {
 	panic(
 		wire.Build(
 			usecase.NewResumeTaskUseCase,
+			provideTimer,
 			ProvideTaskRepository,
 		),
 	)
