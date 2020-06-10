@@ -152,7 +152,7 @@ func (t *task) Resume(at time.Time) error {
 }
 
 func (t *task) Stop() error {
-	t.status.Update(NewStatus(TaskStatusAborted))
+	t.status.Update(NewStatus(TaskStatusStopped))
 	now := time.Now().UnixNano()
 	elapsed, err := NewElapsed(t.elapsed.Value() + now - t.startedAt.Value())
 	if err != nil {
@@ -170,7 +170,7 @@ func (t *task) Stop() error {
 
 func (t *task) AvailableActions() []AvailableAction {
 	switch t.Status().Value() {
-	case TaskStatusNone, TaskStatusFinished, TaskStatusAborted:
+	case TaskStatusNone, TaskStatusFinished, TaskStatusStopped:
 		return []AvailableAction{
 			AvailableActionStart,
 			AvailableActionSwitch,
@@ -192,21 +192,6 @@ func (t *task) AvailableActions() []AvailableAction {
 			AvailableActionSwitch,
 		}
 	}
-}
-
-func SwitchTask(current Task, to Name) (Task, error) {
-	if current.CanStop() {
-		current.Stop()
-	}
-	d, err := NewDuration(int64(DefaultDuration))
-	if err != nil {
-		return nil, err
-	}
-	t := NewTaskWithElapsed(to, d, current.Elapsed())
-	if err := t.Start(time.Now()); err != nil {
-		return nil, err
-	}
-	return t, nil
 }
 
 func (t *task) CanStart() bool {

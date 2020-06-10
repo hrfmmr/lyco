@@ -91,17 +91,10 @@ func main() {
 				}
 			case s := <-ui.OnSwitchTask():
 				logrus.Info("🔄 <-ui.OnSwitchTask()")
-				taskName, err := task.NewName(s)
-				if err != nil {
+				p := usecase.NewSwitchTaskPayload(s, task.DefaultDuration)
+				if err := appctx.UseCase(switchTaskUseCase).Execute(p); err != nil {
 					logrus.Fatalf("💀 %v", err)
 				}
-				if err := appctx.UseCase(switchTaskUseCase).Execute(taskName); err != nil {
-					logrus.Fatalf("💀 %v", err)
-				}
-				switched := taskRepository.GetCurrent()
-				tasktimer.Stop()
-				tasktimer = timer.NewTaskTimer()
-				tasktimer.Start(switched)
 			case task := <-tasktimer.Ticker():
 				logrus.Infof("⏰ #main case task := <-tasktimer.Ticker()")
 				ui.UpdateTask(app, dto.ConvertTaskToDTO(task))

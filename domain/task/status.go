@@ -10,7 +10,7 @@ const (
 	TaskStatusNone     StatusValue = "none"
 	TaskStatusRunning  StatusValue = "running"
 	TaskStatusPaused   StatusValue = "paused"
-	TaskStatusAborted  StatusValue = "aborted"
+	TaskStatusStopped  StatusValue = "aborted"
 	TaskStatusFinished StatusValue = "finished"
 )
 
@@ -52,12 +52,12 @@ func nextStatuses(s StatusValue) []StatusValue {
 		return []StatusValue{
 			TaskStatusPaused,
 			TaskStatusFinished,
-			TaskStatusAborted,
+			TaskStatusStopped,
 		}
 	case TaskStatusPaused:
 		return []StatusValue{
 			TaskStatusRunning,
-			TaskStatusAborted,
+			TaskStatusStopped,
 		}
 	default:
 		return nil

@@ -75,7 +75,7 @@ func (s *tstate) remainsDuration() int64 {
 	switch s.t.Status().Value() {
 	case task.TaskStatusPaused:
 		return duration - elapsed
-	case task.TaskStatusNone, task.TaskStatusAborted:
+	case task.TaskStatusNone, task.TaskStatusStopped:
 		return duration
 	default:
 		to := startedAt + (duration - elapsed)

@@ -45,6 +45,15 @@ func provideStoreGroup() store.StoreGroup {
 	)
 }
 
+func provideTaskService() task.TaskService {
+	panic(
+		wire.Build(
+			task.NewTaskService,
+			ProvideTaskRepository,
+		),
+	)
+}
+
 func InitAppContext() application.AppContext {
 	panic(
 		wire.Build(
@@ -98,6 +107,8 @@ func InitSwitchTaskUseCase() *usecase.SwitchTaskUseCase {
 	panic(
 		wire.Build(
 			usecase.NewSwitchTaskUseCase,
+			provideTimer,
+			provideTaskService,
 			ProvideTaskRepository,
 		),
 	)
