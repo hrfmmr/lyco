@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/hrfmmr/lyco/domain/event"
-	"github.com/hrfmmr/lyco/domain/task"
 )
 
 const (
@@ -14,7 +13,7 @@ const (
 
 type (
 	Timer interface {
-		Start(duration task.Duration, elapsed task.Elapsed)
+		Start(duration Duration)
 		Stop()
 	}
 
@@ -34,7 +33,7 @@ func NewTimer() Timer {
 	}
 }
 
-func (t *timer) Start(duration task.Duration, elapsed task.Elapsed) {
+func (t *timer) Start(duration Duration) {
 	t.ensureContextInitialized()
 	go func(d time.Duration) {
 		ticker := time.NewTicker(t.tickinterval)
@@ -49,7 +48,7 @@ func (t *timer) Start(duration task.Duration, elapsed task.Elapsed) {
 		}
 		t.cancel()
 		event.DefaultPublisher.Publish(NewTimerFinished())
-	}(time.Duration(duration.Value() - elapsed.Value()))
+	}(time.Duration(duration.Value()))
 }
 
 func (t *timer) Stop() {

@@ -26,6 +26,10 @@ func (u *ResumeTaskUseCase) Execute(arg interface{}) error {
 	}
 	t.Resume(time.Now())
 	u.taskRepository.Save(t)
-	u.pomodorotimer.Start(t.Duration(), t.Elapsed())
+	d, err := timer.NewDuration(t.Duration().Value() - t.Elapsed().Value())
+	if err != nil {
+		return err
+	}
+	u.pomodorotimer.Start(d)
 	return nil
 }
