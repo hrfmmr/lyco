@@ -7,16 +7,25 @@ import (
 )
 
 type AppContext interface {
+	AppState() AppState
 	UseCase(usecase usecase.UseCase) usecase.UseCaseExecutor
 	OnChange() <-chan store.StoreGroup
 }
 
 type appContext struct {
+	appstate   AppState
 	storeGroup store.StoreGroup
 }
 
 func NewAppContext(storeGroup store.StoreGroup) AppContext {
-	return &appContext{storeGroup}
+	return &appContext{
+		NewAppState(),
+		storeGroup,
+	}
+}
+
+func (c *appContext) AppState() AppState {
+	return c.appstate
 }
 
 func (c *appContext) UseCase(useCase usecase.UseCase) usecase.UseCaseExecutor {
