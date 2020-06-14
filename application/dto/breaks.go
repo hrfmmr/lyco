@@ -31,7 +31,7 @@ func ConvertBreaksToDTO(b breaks.Breaks) BreaksDTO {
 		endedAt = &val
 	}
 	return &breaksDTO{
-		int64(b.Duration()),
+		b.Duration().Value(),
 		startedAt,
 		endedAt,
 	}

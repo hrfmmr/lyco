@@ -1,6 +1,10 @@
 package breaks
 
-import "time"
+import (
+	"time"
+
+	"github.com/hrfmmr/lyco/domain/event"
+)
 
 const (
 	DefaultShortDuration = 5 * time.Minute
@@ -10,7 +14,7 @@ const (
 type (
 	Breaks interface {
 		// props
-		Duration() time.Duration
+		Duration() Duration
 		StartedAt() StartedAt
 		EndedAt() EndedAt
 		// behaviors
@@ -21,25 +25,27 @@ type (
 	}
 
 	breaks struct {
-		duration  time.Duration
+		duration  Duration
 		startedAt StartedAt
 		endedAt   EndedAt
 	}
 )
 
-func NewBreaks(duration time.Duration) Breaks {
+func NewBreaks(duration Duration) Breaks {
 	return &breaks{duration: duration}
 }
 
 func ShortDefault() Breaks {
-	return NewBreaks(DefaultShortDuration)
+	d, _ := NewDuration(int64(DefaultShortDuration))
+	return NewBreaks(d)
 }
 
 func LongDefault() Breaks {
-	return NewBreaks(DefaultLongDuration)
+	d, _ := NewDuration(int64(DefaultLongDuration))
+	return NewBreaks(d)
 }
 
-func (b *breaks) Duration() time.Duration {
+func (b *breaks) Duration() Duration {
 	return b.duration
 }
 
@@ -58,6 +64,10 @@ func (b *breaks) Start() error {
 		return err
 	}
 	b.startedAt = startedAt
+	event.DefaultPublisher.Publish(NewBreaksStarted(
+		b.startedAt,
+		b.duration,
+	))
 	return nil
 }
 
@@ -68,6 +78,11 @@ func (b *breaks) Stop() error {
 		return err
 	}
 	b.endedAt = endedAt
+	event.DefaultPublisher.Publish(NewBreaksEnded(
+		b.startedAt,
+		b.duration,
+		b.endedAt,
+	))
 	return nil
 }
 

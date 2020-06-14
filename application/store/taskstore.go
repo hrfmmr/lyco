@@ -9,28 +9,28 @@ import (
 
 type TaskStore interface {
 	Store
-	GetState() dto.TaskState
-	SetState(state dto.TaskState)
+	GetState() dto.PomodoroState
+	SetState(state dto.PomodoroState)
 }
 
 type taskStore struct {
 	onChangeCh     chan Store
 	taskRepository task.Repository
-	state          dto.TaskState
+	state          dto.PomodoroState
 }
 
 func NewTaskStore(taskRepository task.Repository) TaskStore {
 	return &taskStore{
 		make(chan Store, 1),
 		taskRepository,
-		dto.NewInitialTaskState(),
+		dto.NewInitialPomodoroState(),
 	}
 }
 
 func (s *taskStore) RecvPayload(p usecase.Payload) {
 	logrus.Infof("🐛taskStore#RecvPayload p:%v", p)
 	if t := s.taskRepository.GetCurrent(); t != nil {
-		newstate := dto.NewTaskStateWithTask(t)
+		newstate := dto.NewPomodoroStateWithTask(t)
 		s.state = newstate
 	}
 }
@@ -38,11 +38,11 @@ func (s *taskStore) OnChange() <-chan Store {
 	return s.onChangeCh
 }
 
-func (s *taskStore) GetState() dto.TaskState {
+func (s *taskStore) GetState() dto.PomodoroState {
 	return s.state
 }
 
-func (s *taskStore) SetState(state dto.TaskState) {
+func (s *taskStore) SetState(state dto.PomodoroState) {
 	s.state = state
 	s.onChangeCh <- s
 }

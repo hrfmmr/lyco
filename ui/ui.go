@@ -217,16 +217,21 @@ func showTaskInputDialog(app gowid.IApp, bootstrap bool) {
 	taskInputDialog.Open(appContainer, gowid.RenderWithRatio{R: 0.5}, app)
 }
 
-func UpdateTask2(app gowid.IApp, task dto.TaskState) {
-	currentMode = modeTask
-	logrus.Infof("🔃ui#UpdateTask2 task:%v", task)
+func UpdatePomodoro(app gowid.IApp, state dto.PomodoroState) {
+	switch state.Mode() {
+	case dto.PomodoroModeTask:
+		currentMode = modeTask
+	case dto.PomodoroModeBreaks:
+		currentMode = modeBreaks
+	}
+	logrus.Infof("🔃ui#UpdateTask2 state:%v", state)
 	keymaps := []*keymap{}
-	for _, action := range task.AvailableActions() {
+	for _, action := range state.AvailableActions() {
 		keymaps = append(keymaps, convertTaskActionToKeymap(action))
 	}
 	app.Run(gowid.RunFunction(func(app gowid.IApp) {
-		updateTaskText(app, task.TaskName())
-		updateTimerText(app, task.RemainsTimerText())
+		updateTaskText(app, state.TaskName())
+		updateTimerText(app, state.RemainsTimerText())
 		updateKeymaps(app, keymaps)
 	}))
 }
@@ -237,7 +242,12 @@ func UpdateTask(app gowid.IApp, task dto.TaskDTO) {
 	logrus.Infof("🔃ui#UpdateTask task:%v", task)
 	keymaps := []*keymap{}
 	for _, action := range task.AvailableActions() {
-		keymaps = append(keymaps, convertTaskActionToKeymap(action))
+		k := convertTaskActionToKeymap(action)
+		if k == nil {
+			logrus.Errorf("❗Failed converting action:%v to keymap", action)
+			continue
+		}
+		keymaps = append(keymaps, k)
 	}
 	app.Run(gowid.RunFunction(func(app gowid.IApp) {
 		updateTaskText(app, task.Name())
@@ -271,6 +281,8 @@ func convertTaskActionToKeymap(action dto.AvailableTaskAction) *keymap {
 		return NewKeymap("C-q", "to stop")
 	case dto.AvailableTaskActionSwitch:
 		return NewKeymap("C-s", "to switch")
+	case dto.AvailableTaskActionAbortBreaks:
+		return NewKeymap("C-q", "to abort breaks")
 	}
 	return nil
 }

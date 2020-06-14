@@ -79,6 +79,6 @@ func (u *SwitchTaskUseCase) Execute(arg interface{}) error {
 	if err != nil {
 		return err
 	}
-	u.pomodorotimer.Start(d)
+	u.pomodorotimer.Start(timer.TimerModeTask, d)
 	return nil
 }

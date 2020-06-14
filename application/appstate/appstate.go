@@ -1,10 +1,11 @@
-package application
+package appstate
 
 import "github.com/hrfmmr/lyco/domain/breaks"
 
 type (
 	AppState interface {
 		CurrentBreaks() breaks.Breaks
+		SetBreaks(b breaks.Breaks)
 	}
 
 	appstate struct {

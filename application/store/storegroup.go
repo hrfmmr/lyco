@@ -1,13 +1,12 @@
 package store
 
 import (
-	"github.com/hrfmmr/lyco/application/dto"
 	"github.com/hrfmmr/lyco/application/usecase"
 )
 
 type (
 	StoreGroup interface {
-		GetTask() dto.TaskState
+		TaskStore() TaskStore
 		OnChange() <-chan StoreGroup
 		Commit(p usecase.Payload, meta usecase.PayloadMeta)
 	}
@@ -27,8 +26,8 @@ func NewStoreGroup(taskStore TaskStore) StoreGroup {
 	return sg
 }
 
-func (g *storegroup) GetTask() dto.TaskState {
-	return g.taskStore.GetState()
+func (g *storegroup) TaskStore() TaskStore {
+	return g.taskStore
 }
 
 func (g *storegroup) OnChange() <-chan StoreGroup {

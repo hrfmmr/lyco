@@ -51,7 +51,7 @@ func (t *breaksTimer) Start(b breaks.Breaks) {
 		}
 		t.finCh <- struct{}{}
 		t.cancel()
-	}(b.Duration())
+	}(time.Duration(b.Duration().Value()))
 }
 
 func (t *breaksTimer) Breaks() breaks.Breaks {

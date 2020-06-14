@@ -7,6 +7,7 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/hrfmmr/lyco/domain/breaks"
 	"github.com/hrfmmr/lyco/domain/task"
+	"github.com/sirupsen/logrus"
 )
 
 type (
@@ -29,17 +30,23 @@ func New() Notifier {
 }
 
 func NotifyForBreaksStart(n Notifier, b breaks.Breaks) {
-	till := time.Unix(0, b.StartedAt().Value()+int64(b.Duration()))
+	till := time.Unix(0, b.StartedAt().Value()+b.Duration().Value())
+	d := time.Duration(b.Duration().Value())
 	n.Notify(
-		"[lyco] ☕",
-		fmt.Sprintf("Take a %v break till %v", b.Duration(), till.Format("15:04")),
+		"lyco",
+		fmt.Sprintf("☕Take a %v break till %v", d, till.Format("15:04")),
 	)
 }
 
 func NotifyForBreaksEnd(n Notifier, t task.Task) {
+	if t.StartedAt() == nil {
+		logrus.Errorf("❗[NotifyForBreaksEnd] startedAt is nil for task:%v", t)
+		return
+	}
 	till := time.Unix(0, t.StartedAt().Value()+t.Duration().Value())
+	d := time.Duration(t.Duration().Value())
 	n.Notify(
-		"[lyco] 🔨",
-		fmt.Sprintf("Work for %v till %v on %s", t.Duration(), till.Format("15:04"), t.Name().Value()),
+		"lyco",
+		fmt.Sprintf("🔨Work for %v till %v on %s", d, till.Format("15:04"), t.Name().Value()),
 	)
 }

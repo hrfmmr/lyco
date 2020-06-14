@@ -13,7 +13,7 @@ const (
 
 type (
 	Timer interface {
-		Start(duration Duration)
+		Start(mode TimerMode, duration Duration)
 		Stop()
 	}
 
@@ -33,7 +33,7 @@ func NewTimer() Timer {
 	}
 }
 
-func (t *timer) Start(duration Duration) {
+func (t *timer) Start(mode TimerMode, duration Duration) {
 	t.ensureContextInitialized()
 	go func(d time.Duration) {
 		ticker := time.NewTicker(t.tickinterval)
@@ -42,12 +42,12 @@ func (t *timer) Start(duration Duration) {
 			case <-t.ctx.Done():
 				return
 			default:
-				event.DefaultPublisher.Publish(NewTimerTicked())
+				event.DefaultPublisher.Publish(NewTimerTicked(mode))
 				<-ticker.C
 			}
 		}
 		t.cancel()
-		event.DefaultPublisher.Publish(NewTimerFinished())
+		event.DefaultPublisher.Publish(NewTimerFinished(mode))
 	}(time.Duration(duration.Value()))
 }
 

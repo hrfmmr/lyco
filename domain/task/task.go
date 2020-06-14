@@ -1,6 +1,7 @@
 package task
 
 import (
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -11,10 +12,11 @@ const (
 	DefaultDuration = 25 * time.Minute
 )
 
+//go:generate stringer -type=AvailableAction
 type AvailableAction int
 
 const (
-	AvailableActionStart = iota
+	AvailableActionStart AvailableAction = iota
 	AvailableActionPause
 	AvailableActionResume
 	AvailableActionStop
@@ -208,6 +210,34 @@ func (t *task) CanResume() bool {
 
 func (t *task) CanStop() bool {
 	return t.hasAvailableAction(AvailableActionStop)
+}
+
+func (t *task) MarshalJSON() ([]byte, error) {
+	var startedAt *string
+	if t.startedAt != nil {
+		startedAtTime := time.Unix(0, t.startedAt.Value()).String()
+		startedAt = &startedAtTime
+	}
+	return json.Marshal(struct {
+		Name             string  `json:"name"`
+		Duration         string  `json:"duration"`
+		StartedAt        *string `json:"started_at"`
+		Elapsed          string  `json:"elapsed"`
+		Status           string  `json:"status"`
+		AvailableActions string  `json:"available_actions"`
+	}{
+		t.name.Value(),
+		time.Duration(t.duration.Value()).String(),
+		startedAt,
+		time.Duration(t.elapsed.Value()).String(),
+		string(t.status.Value()),
+		fmt.Sprintf("%v", t.AvailableActions()),
+	})
+}
+
+func (t *task) String() string {
+	b, _ := json.Marshal(t)
+	return string(b)
 }
 
 func (t *task) hasAvailableAction(action AvailableAction) bool {

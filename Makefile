@@ -1,8 +1,13 @@
 PRJ=$(shell basename "$(PWD)")
 
+.PHONY: generate
+## generate: Execute go generate
+generate:
+	go generate ./...
+
 .PHONY: build
 ## build: Build app
-build:
+build: generate
 	go build -o .build/app ./cmd/lyco
 
 .PHONY: run

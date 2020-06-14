@@ -1,31 +1,37 @@
 package application
 
 import (
+	"github.com/hrfmmr/lyco/application/appstate"
 	"github.com/hrfmmr/lyco/application/store"
 	"github.com/hrfmmr/lyco/application/usecase"
 	"github.com/sirupsen/logrus"
 )
 
 type AppContext interface {
-	AppState() AppState
+	AppState() appstate.AppState
+	StoreGroup() store.StoreGroup
 	UseCase(usecase usecase.UseCase) usecase.UseCaseExecutor
 	OnChange() <-chan store.StoreGroup
 }
 
 type appContext struct {
-	appstate   AppState
+	appstate   appstate.AppState
 	storeGroup store.StoreGroup
 }
 
-func NewAppContext(storeGroup store.StoreGroup) AppContext {
+func NewAppContext(appstate appstate.AppState, storeGroup store.StoreGroup) AppContext {
 	return &appContext{
-		NewAppState(),
+		appstate,
 		storeGroup,
 	}
 }
 
-func (c *appContext) AppState() AppState {
+func (c *appContext) AppState() appstate.AppState {
 	return c.appstate
+}
+
+func (c *appContext) StoreGroup() store.StoreGroup {
+	return c.storeGroup
 }
 
 func (c *appContext) UseCase(useCase usecase.UseCase) usecase.UseCaseExecutor {

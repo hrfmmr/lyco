@@ -10,6 +10,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+//go:generate stringer -type=PomodoroMode
+
+type PomodoroMode int
+
+const (
+	PomodoroModeTask PomodoroMode = iota
+	PomodoroModeBreaks
+)
+
 //go:generate stringer -type=AvailableTaskAction
 type AvailableTaskAction int
 
@@ -23,7 +32,8 @@ const (
 )
 
 type (
-	TaskState interface {
+	PomodoroState interface {
+		Mode() PomodoroMode
 		TaskName() string
 		RemainsTimerText() string
 		AvailableActions() []AvailableTaskAction
@@ -40,8 +50,12 @@ type (
 	}
 )
 
-func NewInitialTaskState() TaskState {
+func NewInitialPomodoroState() PomodoroState {
 	return &initialstate{}
+}
+
+func (s *initialstate) Mode() PomodoroMode {
+	return PomodoroModeTask
 }
 
 func (s *initialstate) TaskName() string {
@@ -58,8 +72,12 @@ func (s *initialstate) AvailableActions() []AvailableTaskAction {
 
 //===============================================================
 
-func NewTaskStateWithTask(t task.Task) TaskState {
+func NewPomodoroStateWithTask(t task.Task) PomodoroState {
 	return &tstate{t}
+}
+
+func (s *tstate) Mode() PomodoroMode {
+	return PomodoroModeTask
 }
 
 func (s *tstate) TaskName() string {
@@ -71,13 +89,17 @@ func (s *tstate) RemainsTimerText() string {
 }
 
 func (s *tstate) remainsDuration() int64 {
-	duration, elapsed, startedAt := s.t.Duration().Value(), s.t.Elapsed().Value(), s.t.StartedAt().Value()
+	duration, elapsed := s.t.Duration().Value(), s.t.Elapsed().Value()
 	switch s.t.Status().Value() {
 	case task.TaskStatusPaused:
 		return duration - elapsed
 	case task.TaskStatusNone, task.TaskStatusStopped:
 		return duration
 	default:
+		if s.t.StartedAt() == nil {
+			logrus.Errorf("❗[remainsDuration] startedAt is nil for task:%v", s.t)
+		}
+		startedAt := s.t.StartedAt().Value()
 		to := startedAt + (duration - elapsed)
 		now := time.Now().UnixNano()
 		return to - now
@@ -122,8 +144,12 @@ func (s *tstate) String() string {
 
 //===============================================================
 
-func NewTaskStateWithBreaks(b breaks.Breaks) TaskState {
+func NewPomodoroStateWithBreaks(b breaks.Breaks) PomodoroState {
 	return &bstate{b}
+}
+
+func (s *bstate) Mode() PomodoroMode {
+	return PomodoroModeBreaks
 }
 
 func (s *bstate) TaskName() string {
@@ -137,9 +163,9 @@ func (s *bstate) RemainsTimerText() string {
 func (s *bstate) remainsDuration() int64 {
 	if s.b.StartedAt() == nil {
 		logrus.Errorf("❗Breaks seem not to have been started...")
-		return int64(s.b.Duration())
+		return s.b.Duration().Value()
 	}
-	to := s.b.StartedAt().Value() + int64(s.b.Duration())
+	to := s.b.StartedAt().Value() + s.b.Duration().Value()
 	now := time.Now().UnixNano()
 	return to - now
 }

@@ -6,6 +6,7 @@ package di
 import (
 	"github.com/google/wire"
 	"github.com/hrfmmr/lyco/application"
+	"github.com/hrfmmr/lyco/application/appstate"
 	"github.com/hrfmmr/lyco/application/eventprocessor"
 	"github.com/hrfmmr/lyco/application/store"
 	"github.com/hrfmmr/lyco/application/usecase"
@@ -21,6 +22,14 @@ var (
 	taskStore      = store.NewTaskStore(
 		taskRepository,
 	)
+	storeGroup = store.NewStoreGroup(
+		taskStore,
+	)
+	appState   = appstate.NewAppState()
+	appContext = application.NewAppContext(
+		appState,
+		storeGroup,
+	)
 	eventPublisher = event.NewPublisher()
 )
 
@@ -28,21 +37,12 @@ func provideTimer() timer.Timer {
 	return pomodorotimer
 }
 
-func ProvideTaskRepository() task.Repository {
-	return taskRepository
-}
-
 func provideTaskStore() store.TaskStore {
 	return taskStore
 }
 
-func provideStoreGroup() store.StoreGroup {
-	panic(
-		wire.Build(
-			store.NewStoreGroup,
-			provideTaskStore,
-		),
-	)
+func provideAppState() appstate.AppState {
+	return appState
 }
 
 func provideTaskService() task.TaskService {
@@ -54,13 +54,12 @@ func provideTaskService() task.TaskService {
 	)
 }
 
-func InitAppContext() application.AppContext {
-	panic(
-		wire.Build(
-			application.NewAppContext,
-			provideStoreGroup,
-		),
-	)
+func ProvideAppContext() application.AppContext {
+	return appContext
+}
+
+func ProvideTaskRepository() task.Repository {
+	return taskRepository
 }
 
 func InitStartTaskUseCase() *usecase.StartTaskUseCase {
@@ -118,17 +117,30 @@ func InitAbortBreaksUseCase() *usecase.AbortBreaksUseCase {
 	panic(
 		wire.Build(
 			usecase.NewAbortBreaksUseCase,
+			provideAppState,
+			ProvideTaskRepository,
+			provideTimer,
+		),
+	)
+}
+
+func InitTimerTickedEventProcessor() *eventprocessor.TimerTickedEventProcessor {
+	panic(
+		wire.Build(
+			eventprocessor.NewTimerTickedEventProcessor,
+			ProvideAppContext,
 			ProvideTaskRepository,
 		),
 	)
 }
 
-func InitTimerStateUpdater() *eventprocessor.TimerStateUpdater {
+func InitTimerFinishedEventProcessor() *eventprocessor.TimerFinishedEventProcessor {
 	panic(
 		wire.Build(
-			eventprocessor.NewTimerStateUpdater,
-			provideTaskStore,
+			eventprocessor.NewTimerFinishedEventProcessor,
+			ProvideAppContext,
 			ProvideTaskRepository,
+			provideTimer,
 		),
 	)
 }
