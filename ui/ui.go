@@ -2,7 +2,6 @@ package ui
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 
 	"github.com/gcla/gowid"
@@ -232,39 +231,6 @@ func UpdatePomodoro(app gowid.IApp, state dto.PomodoroState) {
 	app.Run(gowid.RunFunction(func(app gowid.IApp) {
 		updateTaskText(app, state.TaskName())
 		updateTimerText(app, state.RemainsTimerText())
-		updateKeymaps(app, keymaps)
-	}))
-}
-
-//TODO: remove
-func UpdateTask(app gowid.IApp, task dto.TaskDTO) {
-	currentMode = modeTask
-	logrus.Infof("🔃ui#UpdateTask task:%v", task)
-	keymaps := []*keymap{}
-	for _, action := range task.AvailableActions() {
-		k := convertTaskActionToKeymap(action)
-		if k == nil {
-			logrus.Errorf("❗Failed converting action:%v to keymap", action)
-			continue
-		}
-		keymaps = append(keymaps, k)
-	}
-	app.Run(gowid.RunFunction(func(app gowid.IApp) {
-		updateTaskText(app, task.Name())
-		updateTimerText(app, task.RemainsTimerText())
-		updateKeymaps(app, keymaps)
-	}))
-}
-
-//TODO: remove
-func UpdateBreaks(app gowid.IApp, b dto.BreaksDTO) {
-	currentMode = modeBreaks
-	logrus.Infof("🔃ui#UpdateBreaks breaks:%v", b)
-	keymaps := []*keymap{
-		NewKeymap("C-q", "to abort breaks"),
-	}
-	app.Run(gowid.RunFunction(func(app gowid.IApp) {
-		updateTimerText(app, fmt.Sprintf("☕ %s", b.RemainsTimerText()))
 		updateKeymaps(app, keymaps)
 	}))
 }

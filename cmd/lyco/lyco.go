@@ -15,10 +15,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// const (
-// longBreaksPerPoms = 4
-// )
-
 var (
 	wg                          sync.WaitGroup
 	app                         *gowid.App
@@ -34,7 +30,6 @@ var (
 	abortBreaksUseCase          = di.InitAbortBreaksUseCase()
 	timertickedEventProcessor   = di.InitTimerTickedEventProcessor()
 	timerfinishedEventProcessor = di.InitTimerFinishedEventProcessor()
-	// taskRepository              = di.ProvideTaskRepository()
 )
 
 func init() {
