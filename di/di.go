@@ -13,12 +13,12 @@ import (
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/domain/timer"
-	"github.com/hrfmmr/lyco/infra"
+	"github.com/hrfmmr/lyco/infra/db"
 )
 
 var (
 	pomodorotimer  = timer.NewTimer()
-	taskRepository = infra.NewTaskRepository()
+	taskRepository = db.NewTaskRepository()
 	taskStore      = store.NewTaskStore(
 		taskRepository,
 	)

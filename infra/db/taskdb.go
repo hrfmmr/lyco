@@ -1,4 +1,4 @@
-package infra
+package db
 
 import (
 	"github.com/hrfmmr/lyco/domain/task"
