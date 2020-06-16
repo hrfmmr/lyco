@@ -31,7 +31,7 @@ func (s *TimerTickedEventProcessor) EventType() event.EventType {
 func (s *TimerTickedEventProcessor) HandleEvent(e event.Event) {
 	ev, ok := e.(timer.TimerTicked)
 	if !ok {
-		logrus.Errorf("❗[TimerStateUpdater] got unexpected event:%T, expecting: task.TimerTicked", e)
+		logrus.Errorf("❗[TimerTickedEventProcessor] got unexpected event:%T, expecting: task.TimerTicked", e)
 		return
 	}
 	switch ev.Mode() {
@@ -42,7 +42,7 @@ func (s *TimerTickedEventProcessor) HandleEvent(e event.Event) {
 	case timer.TimerModeBreaks:
 		b := s.appContext.AppState().CurrentBreaks()
 		if b == nil {
-			logrus.Errorf("❗[TimerStateUpdater] breaks is nil...")
+			logrus.Errorf("❗[TimerTickedEventProcessor] breaks is nil...")
 			return
 		}
 		newstate := dto.NewPomodoroStateWithBreaks(b)
