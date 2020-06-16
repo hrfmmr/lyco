@@ -40,19 +40,19 @@ func (r *entryRepository) GetLatest() (entry.Entry, error) {
 
 func (r *entryRepository) GetAll() ([]entry.Entry, error) {
 	entries := make([]entry.Entry, len(r.entries))
-	for _, e := range r.entries {
+	for i, e := range r.entries {
 		m, err := entryRecordToModel(e)
 		if err != nil {
 			return nil, err
 		}
-		entries = append(entries, m)
+		entries[i] = m
 	}
 	return entries, nil
 }
 
-func (r *entryRepository) Update(id entry.ID, e entry.Entry) {
+func (r *entryRepository) Update(e entry.Entry) {
 	for i, v := range r.entries {
-		if v.id == id.Value() {
+		if v.id == e.ID().Value() {
 			r.entries[i] = entryModelToRecord(e)
 			return
 		}

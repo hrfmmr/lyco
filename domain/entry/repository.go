@@ -1,8 +1,8 @@
 package entry
 
 type Repository interface {
-	Add(entry Entry)
+	Add(e Entry)
 	GetLatest() (Entry, error)
 	GetAll() ([]Entry, error)
-	Update(id ID, entry Entry)
+	Update(e Entry)
 }
