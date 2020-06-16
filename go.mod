@@ -9,4 +9,5 @@ require (
 	github.com/google/uuid v1.1.1
 	github.com/google/wire v0.4.0
 	github.com/sirupsen/logrus v1.5.0
+    github.com/elliotchance/orderedmap v1.2.2
 )
