@@ -235,6 +235,13 @@ func UpdatePomodoro(app gowid.IApp, state dto.PomodoroState) {
 	}))
 }
 
+func UpdateMetrics(app gowid.IApp, state dto.MetricsState) {
+	app.Run(gowid.RunFunction(func(app gowid.IApp) {
+		updateMetricsHeaderText(app, state.TotalElapsed(), state.TotalPomsCount())
+		updateMetricsModel(app, state.Entries())
+	}))
+}
+
 func convertTaskActionToKeymap(action dto.AvailableTaskAction) *keymap {
 	switch action {
 	case dto.AvailableTaskActionStart:

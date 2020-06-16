@@ -136,6 +136,15 @@ func InitAbortBreaksUseCase() *usecase.AbortBreaksUseCase {
 	)
 }
 
+func InitTaskStartedEventProcessor() *eventprocessor.TaskStartedEventProcessor {
+	panic(
+		wire.Build(
+			eventprocessor.NewTaskStartedEventProcessor,
+			provideEntryRepository,
+		),
+	)
+}
+
 func InitTimerTickedEventProcessor() *eventprocessor.TimerTickedEventProcessor {
 	panic(
 		wire.Build(

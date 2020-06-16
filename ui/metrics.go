@@ -1,41 +1,61 @@
 package ui
 
 import (
+	"fmt"
+	"strconv"
+	"time"
+
 	"github.com/gcla/gowid"
-	"github.com/gcla/gowid/widgets/divider"
-	"github.com/gcla/gowid/widgets/fill"
 	"github.com/gcla/gowid/widgets/pile"
 	"github.com/gcla/gowid/widgets/table"
 	"github.com/gcla/gowid/widgets/text"
 	"github.com/gcla/gowid/widgets/vpadding"
+	"github.com/hrfmmr/lyco/application/dto"
+)
+
+var (
+	metricsHeaderText  *text.Widget
+	metricsTable       *table.Widget
+	metricsTableHeader = []string{"title", "elapsed", "poms"}
 )
 
 func NewMetricsView() gowid.IWidget {
-	// TODO:temporary metrics model
 	metricsModel := table.NewSimpleModel(
-		[]string{"title", "elapsed", "poms"},
-		[][]string{
-			{"task1", "1h25m19s", "5"},
-			{"task2", "1h20m19s", "4"},
-			{"task3", "1h2m19s", "3"},
-			{"task4", "1h2m19s", "2"},
-			{"task5", "1h2m19s", "1"},
-		},
-		table.SimpleOptions{
-			Style: table.StyleOptions{
-				HorizontalSeparator: divider.NewAscii(),
-				TableSeparator:      divider.NewUnicode(),
-				VerticalSeparator:   fill.New('|'),
-			},
-		},
+		metricsTableHeader,
+		[][]string{},
 	)
+	metricsHeaderText = text.New("")
+	metricsTable = table.New(metricsModel)
 	metricsView := vpadding.New(
 		pile.NewFlow(
-			text.New("Total ⏰:1h24m59s 🍅:6poms"),
-			table.New(metricsModel),
+			metricsHeaderText,
+			metricsTable,
 		),
 		gowid.VAlignTop{},
 		gowid.RenderFlow{},
 	)
 	return metricsView
+}
+
+func updateMetricsHeaderText(app gowid.IApp, totalElapsed time.Duration, totalPomsCount uint64) {
+	metricsHeaderText.SetText(
+		fmt.Sprintf("Total ⏰%v 🍅%dpoms", totalElapsed, totalPomsCount),
+		app,
+	)
+}
+
+func updateMetricsModel(app gowid.IApp, entries []dto.MetricsEntry) {
+	data := make([][]string, len(entries))
+	for i, e := range entries {
+		data[i] = []string{
+			e.Name(),
+			e.Elapsed().String(),
+			strconv.FormatUint(e.PomsCount(), 10),
+		}
+	}
+	model := table.NewSimpleModel(
+		metricsTableHeader,
+		data,
+	)
+	metricsTable.SetModel(model, app)
 }

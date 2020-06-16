@@ -12,13 +12,13 @@ type (
 	MetricsEntry interface {
 		Name() string
 		Elapsed() time.Duration
-		PomsCount() uint
+		PomsCount() uint64
 	}
 
 	MetricsState interface {
 		Entries() []MetricsEntry
 		TotalElapsed() time.Duration
-		TotalPomsCount() uint
+		TotalPomsCount() uint64
 	}
 
 	metricsEntry struct {
@@ -51,8 +51,8 @@ func (e *metricsEntry) Elapsed() time.Duration {
 	return time.Duration(elapsed)
 }
 
-func (e *metricsEntry) PomsCount() uint {
-	return uint(int64(e.Elapsed()) / e.duration)
+func (e *metricsEntry) PomsCount() uint64 {
+	return uint64(int64(e.Elapsed()) / e.duration)
 }
 
 func NewInitialMetricsState() MetricsState {
@@ -78,8 +78,8 @@ func (s *metricsState) TotalElapsed() time.Duration {
 	return time.Duration(elapsed)
 }
 
-func (s *metricsState) TotalPomsCount() uint {
-	return uint(int64(s.TotalElapsed()) / s.duration)
+func (s *metricsState) TotalPomsCount() uint64 {
+	return uint64(int64(s.TotalElapsed()) / s.duration)
 }
 
 func EntriesToMetricsModel(entries []entry.Entry, duration int64) []MetricsEntry {

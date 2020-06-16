@@ -28,6 +28,7 @@ var (
 	stopTaskUseCase             = di.InitStopTaskUseCase()
 	switchTaskUseCase           = di.InitSwitchTaskUseCase()
 	abortBreaksUseCase          = di.InitAbortBreaksUseCase()
+	taskStartedEventProcessor   = di.InitTaskStartedEventProcessor()
 	timertickedEventProcessor   = di.InitTimerTickedEventProcessor()
 	timerfinishedEventProcessor = di.InitTimerFinishedEventProcessor()
 )
@@ -35,6 +36,7 @@ var (
 func init() {
 	event.DefaultPublisher.Subscribe(
 		lifecycle.NewLifecycleEventHub(),
+		taskStartedEventProcessor,
 		timertickedEventProcessor,
 		timerfinishedEventProcessor,
 	)
@@ -57,8 +59,8 @@ func main() {
 				break Loop
 			case sg := <-appContext.OnChange():
 				logrus.Infof("♻ #main case <-appctx.OnChange")
-				task := sg.TaskStore().GetState()
-				ui.UpdatePomodoro(app, task)
+				ui.UpdatePomodoro(app, sg.TaskStore().GetState())
+				ui.UpdateMetrics(app, sg.MetricsStore().GetState())
 			case s := <-ui.OnStartTask():
 				p := usecase.NewStartTaskPayload(s, task.DefaultDuration)
 				if err := appContext.UseCase(startTaskUseCase).Execute(p); err != nil {
