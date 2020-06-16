@@ -10,6 +10,7 @@ import (
 	"github.com/hrfmmr/lyco/application/eventprocessor"
 	"github.com/hrfmmr/lyco/application/store"
 	"github.com/hrfmmr/lyco/application/usecase"
+	"github.com/hrfmmr/lyco/domain/entry"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/domain/timer"
@@ -17,13 +18,16 @@ import (
 )
 
 var (
-	pomodorotimer  = timer.NewTimer()
-	taskRepository = db.NewTaskRepository()
-	taskStore      = store.NewTaskStore(
+	pomodorotimer   = timer.NewTimer()
+	taskRepository  = db.NewTaskRepository()
+	entryRepository = db.NewEntryRepository()
+	taskStore       = store.NewTaskStore(
 		taskRepository,
 	)
-	storeGroup = store.NewStoreGroup(
+	metricsStore = store.NewMetricsStore()
+	storeGroup   = store.NewStoreGroup(
 		taskStore,
+		metricsStore,
 	)
 	appState   = appstate.NewAppState()
 	appContext = application.NewAppContext(
@@ -39,6 +43,10 @@ func provideTimer() timer.Timer {
 
 func provideTaskStore() store.TaskStore {
 	return taskStore
+}
+
+func provideMetricsStore() store.MetricsStore {
+	return metricsStore
 }
 
 func provideAppState() appstate.AppState {
@@ -60,6 +68,10 @@ func ProvideAppContext() application.AppContext {
 
 func ProvideTaskRepository() task.Repository {
 	return taskRepository
+}
+
+func provideEntryRepository() entry.Repository {
+	return entryRepository
 }
 
 func InitStartTaskUseCase() *usecase.StartTaskUseCase {
@@ -129,7 +141,9 @@ func InitTimerTickedEventProcessor() *eventprocessor.TimerTickedEventProcessor {
 		wire.Build(
 			eventprocessor.NewTimerTickedEventProcessor,
 			ProvideAppContext,
+			provideMetricsStore,
 			ProvideTaskRepository,
+			provideEntryRepository,
 		),
 	)
 }

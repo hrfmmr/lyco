@@ -55,6 +55,10 @@ func (e *metricsEntry) PomsCount() uint {
 	return uint(int64(e.Elapsed()) / e.duration)
 }
 
+func NewInitialMetricsState() MetricsState {
+	return &metricsState{}
+}
+
 func NewMetricsState(entries []entry.Entry, duration int64) MetricsState {
 	return &metricsState{
 		EntriesToMetricsModel(entries, duration),

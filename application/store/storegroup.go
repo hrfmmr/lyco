@@ -7,19 +7,22 @@ import (
 type (
 	StoreGroup interface {
 		TaskStore() TaskStore
+		MetricsStore() MetricsStore
 		OnChange() <-chan StoreGroup
 		Commit(p usecase.Payload, meta usecase.PayloadMeta)
 	}
 
 	storegroup struct {
-		taskStore TaskStore
-		onChange  chan StoreGroup
+		taskStore    TaskStore
+		metricsStore MetricsStore
+		onChange     chan StoreGroup
 	}
 )
 
-func NewStoreGroup(taskStore TaskStore) StoreGroup {
+func NewStoreGroup(taskStore TaskStore, metricsStore MetricsStore) StoreGroup {
 	sg := &storegroup{
 		taskStore,
+		metricsStore,
 		make(chan StoreGroup),
 	}
 	sg.registerStores()
@@ -28,6 +31,10 @@ func NewStoreGroup(taskStore TaskStore) StoreGroup {
 
 func (g *storegroup) TaskStore() TaskStore {
 	return g.taskStore
+}
+
+func (g *storegroup) MetricsStore() MetricsStore {
+	return g.metricsStore
 }
 
 func (g *storegroup) OnChange() <-chan StoreGroup {
@@ -57,5 +64,6 @@ func (g *storegroup) registerStores() {
 func (g *storegroup) stores() []Store {
 	return []Store{
 		g.taskStore,
+		g.metricsStore,
 	}
 }

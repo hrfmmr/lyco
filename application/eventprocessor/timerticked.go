@@ -1,8 +1,12 @@
 package eventprocessor
 
 import (
+	"time"
+
 	"github.com/hrfmmr/lyco/application"
 	"github.com/hrfmmr/lyco/application/dto"
+	"github.com/hrfmmr/lyco/application/store"
+	"github.com/hrfmmr/lyco/domain/entry"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/domain/timer"
@@ -10,25 +14,31 @@ import (
 )
 
 type TimerTickedEventProcessor struct {
-	appContext     application.AppContext
-	taskRepository task.Repository
+	appContext      application.AppContext
+	metricsStore    store.MetricsStore
+	taskRepository  task.Repository
+	entryRepository entry.Repository
 }
 
 func NewTimerTickedEventProcessor(
 	appContext application.AppContext,
+	metricsStore store.MetricsStore,
 	taskRepository task.Repository,
+	entryRepository entry.Repository,
 ) *TimerTickedEventProcessor {
 	return &TimerTickedEventProcessor{
 		appContext,
+		metricsStore,
 		taskRepository,
+		entryRepository,
 	}
 }
 
-func (s *TimerTickedEventProcessor) EventType() event.EventType {
+func (p *TimerTickedEventProcessor) EventType() event.EventType {
 	return event.EventTypeTimerTicked
 }
 
-func (s *TimerTickedEventProcessor) HandleEvent(e event.Event) {
+func (p *TimerTickedEventProcessor) HandleEvent(e event.Event) {
 	ev, ok := e.(timer.TimerTicked)
 	if !ok {
 		logrus.Errorf("❗[TimerTickedEventProcessor] got unexpected event:%T, expecting: task.TimerTicked", e)
@@ -36,16 +46,36 @@ func (s *TimerTickedEventProcessor) HandleEvent(e event.Event) {
 	}
 	switch ev.Mode() {
 	case timer.TimerModeTask:
-		t := s.taskRepository.GetCurrent()
-		newstate := dto.NewPomodoroStateWithTask(t)
-		s.appContext.StoreGroup().TaskStore().SetState(newstate)
+		t := p.taskRepository.GetCurrent()
+		newPomodoroState := dto.NewPomodoroStateWithTask(t)
+		p.appContext.StoreGroup().TaskStore().SetState(newPomodoroState)
+
+		entr, err := p.entryRepository.GetLatest()
+		if err != nil {
+			logrus.Errorf("❗[TimerTickedEventProcessor] err:%v", err)
+			return
+		}
+		elapsed, err := entry.NewElapsed(int64(time.Second))
+		if err != nil {
+			logrus.Errorf("❗[TimerTickedEventProcessor] err:%v", err)
+			return
+		}
+		entr.IncrementElapsed(elapsed)
+		p.entryRepository.Update(entr)
+		entries, err := p.entryRepository.GetAll()
+		if err != nil {
+			logrus.Errorf("❗[TimerTickedEventProcessor] err:%v", err)
+			return
+		}
+		newMetricsState := dto.NewMetricsState(entries, t.Duration().Value())
+		p.metricsStore.SetState(newMetricsState)
 	case timer.TimerModeBreaks:
-		b := s.appContext.AppState().CurrentBreaks()
+		b := p.appContext.AppState().CurrentBreaks()
 		if b == nil {
 			logrus.Errorf("❗[TimerTickedEventProcessor] breaks is nil...")
 			return
 		}
 		newstate := dto.NewPomodoroStateWithBreaks(b)
-		s.appContext.StoreGroup().TaskStore().SetState(newstate)
+		p.appContext.StoreGroup().TaskStore().SetState(newstate)
 	}
 }
