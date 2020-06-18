@@ -1,18 +1,22 @@
 package main
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"sync"
 
 	"github.com/gcla/gowid"
-	"github.com/gcla/gowid/examples"
 	"github.com/hrfmmr/lyco/application/lifecycle"
 	"github.com/hrfmmr/lyco/application/usecase"
 	"github.com/hrfmmr/lyco/di"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/ui"
+	"github.com/shibukawa/configdir"
+	"golang.org/x/sync/errgroup"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -43,60 +47,77 @@ func init() {
 }
 
 func main() {
-	f := examples.RedirectLogger("lyco.log")
-	defer f.Close()
+	os.Exit(cmain())
+}
+
+func cmain() int {
+	stdConf := configdir.New("", "lyco")
+	dirs := stdConf.QueryFolders(configdir.Cache)
+	if err := dirs[0].CreateParentDir("dummy"); err != nil {
+		fmt.Printf("Warning: could not create cache dir: %v\n", err)
+	}
+	cachedir := dirs[0].Path
+	logfile := filepath.Join(cachedir, "lyco.log")
+	logfd, err := os.OpenFile(logfile, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Could not create log file %s: %v\n", logfile, err)
+		return 1
+	}
+	// Don't close it - just let the descriptor be closed at exit. log is used
+	// in many places, some outside of this main function, and closing results in
+	// an error often on freebsd.
+	//defer logfd.Close()
+	log.SetOutput(logfd)
 
 	app, err = ui.Build()
-	examples.ExitOnErr(err)
-	wg.Add(1)
-	go func(app gowid.IApp) {
-		defer wg.Done()
-	Loop:
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Failed initializing app err:%v\n", err)
+		return 1
+	}
+	var g errgroup.Group
+	g.Go(func() error {
 		for {
 			select {
 			case <-finCh:
-				logrus.Infof("🔴 #main case <-finChan")
-				break Loop
+				return nil
 			case sg := <-appContext.OnChange():
-				logrus.Infof("♻ #main case <-appctx.OnChange")
 				ui.UpdatePomodoro(app, sg.TaskStore().GetState())
 				ui.UpdateMetrics(app, sg.MetricsStore().GetState())
 			case s := <-ui.OnStartTask():
 				p := usecase.NewStartTaskPayload(s, task.DefaultDuration)
 				if err := appContext.UseCase(startTaskUseCase).Execute(p); err != nil {
-					logrus.Fatalf("💀 %v", err)
+					return err
 				}
 			case <-ui.OnPauseTask():
-				logrus.Info("|| <-ui.OnPauseTask()")
 				if err := appContext.UseCase(pauseTaskUseCase).Execute(nil); err != nil {
-					logrus.Fatalf("💀 %v", err)
+					return err
 				}
 			case <-ui.OnResumeTask():
-				logrus.Info("▶ <-ui.OnResumeTask()")
 				if err := appContext.UseCase(resumeTaskUseCase).Execute(nil); err != nil {
-					logrus.Fatalf("💀 %v", err)
+					return err
 				}
 			case <-ui.OnStopTask():
-				logrus.Info("🔴 <-ui.OnStopTask()")
 				if err := appContext.UseCase(stopTaskUseCase).Execute(nil); err != nil {
-					logrus.Fatalf("💀 %v", err)
+					return err
 				}
 			case s := <-ui.OnSwitchTask():
-				logrus.Info("🔄 <-ui.OnSwitchTask()")
 				p := usecase.NewSwitchTaskPayload(s, task.DefaultDuration)
 				if err := appContext.UseCase(switchTaskUseCase).Execute(p); err != nil {
-					logrus.Fatalf("💀 %v", err)
+					return err
 				}
 			case <-ui.OnAbortBreaks():
-				logrus.Infof("🔴 #main case <-ui.OnAbortBreaks()")
 				if err := appContext.UseCase(abortBreaksUseCase).Execute(nil); err != nil {
-					logrus.Fatalf("💀 %v", err)
+					return err
 				}
 			}
 		}
-	}(app)
+	})
 	ui.StartTask(app)
 	app.MainLoop(gowid.UnhandledInputFunc(ui.UnhandledInput))
 	finCh <- struct{}{}
-	wg.Wait()
+	if err := g.Wait(); err != nil {
+		log.Error(err)
+		return 1
+	}
+	return 0
 }
