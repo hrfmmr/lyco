@@ -153,7 +153,7 @@ func (s *bstate) Mode() PomodoroMode {
 }
 
 func (s *bstate) TaskName() string {
-	return ""
+	return "☕"
 }
 
 func (s *bstate) RemainsTimerText() string {
