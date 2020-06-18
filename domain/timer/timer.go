@@ -37,13 +37,19 @@ func (t *timer) Start(mode TimerMode, duration Duration) {
 	t.ensureContextInitialized()
 	go func(d time.Duration) {
 		ticker := time.NewTicker(t.tickinterval)
-		for r := d; r > 0; r -= t.tickinterval {
+		remains := d
+		event.DefaultPublisher.Publish(NewTimerTicked(mode))
+	Loop:
+		for {
 			select {
 			case <-t.ctx.Done():
 				return
-			default:
+			case <-ticker.C:
+				remains -= t.tickinterval
+				if remains <= 0 {
+					break Loop
+				}
 				event.DefaultPublisher.Publish(NewTimerTicked(mode))
-				<-ticker.C
 			}
 		}
 		t.cancel()
