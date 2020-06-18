@@ -62,6 +62,7 @@ func cmain() int {
 	// an error often on freebsd.
 	//defer logfd.Close()
 	log.SetOutput(logfd)
+	log.SetReportCaller(true)
 
 	app, err := ui.Build()
 	if err != nil {
