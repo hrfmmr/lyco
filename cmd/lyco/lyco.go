@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"sync"
 
 	"github.com/gcla/gowid"
 	"github.com/hrfmmr/lyco/application/lifecycle"
@@ -20,11 +19,6 @@ import (
 )
 
 var (
-	wg                          sync.WaitGroup
-	app                         *gowid.App
-	flow                        gowid.RenderFlow
-	err                         error
-	finCh                       = make(chan struct{}, 1)
 	appContext                  = di.ProvideAppContext()
 	startTaskUseCase            = di.InitStartTaskUseCase()
 	pauseTaskUseCase            = di.InitPauseTaskUseCase()
@@ -69,12 +63,13 @@ func cmain() int {
 	//defer logfd.Close()
 	log.SetOutput(logfd)
 
-	app, err = ui.Build()
+	app, err := ui.Build()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Failed initializing app err:%v\n", err)
 		return 1
 	}
 	var g errgroup.Group
+	finCh := make(chan struct{}, 1)
 	g.Go(func() error {
 		for {
 			select {
