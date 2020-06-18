@@ -6,6 +6,7 @@ import (
 	"github.com/elliotchance/orderedmap"
 
 	"github.com/hrfmmr/lyco/domain/entry"
+	"github.com/hrfmmr/lyco/domain/task"
 )
 
 type (
@@ -56,7 +57,10 @@ func (e *metricsEntry) PomsCount() uint64 {
 }
 
 func NewInitialMetricsState() MetricsState {
-	return &metricsState{}
+	return &metricsState{
+		[]MetricsEntry{},
+		int64(task.DefaultDuration),
+	}
 }
 
 func NewMetricsState(entries []entry.Entry, duration int64) MetricsState {
