@@ -8,10 +8,12 @@ import (
 	"github.com/gcla/gowid"
 	"github.com/hrfmmr/lyco/application/lifecycle"
 	"github.com/hrfmmr/lyco/application/usecase"
+	"github.com/hrfmmr/lyco/cli"
 	"github.com/hrfmmr/lyco/di"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/ui"
+	flags "github.com/jessevdk/go-flags"
 	"github.com/shibukawa/configdir"
 	"golang.org/x/sync/errgroup"
 
@@ -40,11 +42,30 @@ func init() {
 	)
 }
 
+func newOptsParser(opt *cli.Lyco) *flags.Parser {
+	p := flags.NewParser(opt, flags.HelpFlag|flags.PrintErrors|flags.PassDoubleDash)
+	p.Name = "lyco"
+	p.Usage = `- A terminal user interface for pomodoro technique🍅`
+	return p
+}
+
 func main() {
 	os.Exit(cmain())
 }
 
 func cmain() int {
+	var opts cli.Lyco
+	parser := newOptsParser(&opts)
+	_, err := parser.Parse()
+
+	if err != nil {
+		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
+			return 0
+		}
+		fmt.Fprintf(os.Stderr, "Command-line error:%v\n\n", err)
+		return 1
+	}
+
 	stdConf := configdir.New("", "lyco")
 	dirs := stdConf.QueryFolders(configdir.Cache)
 	if err := dirs[0].CreateParentDir("dummy"); err != nil {

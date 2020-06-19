@@ -1,4 +1,5 @@
 PRJ=$(shell basename "$(PWD)")
+BIN := lyco
 
 .PHONY: generate
 ## generate: Execute go generate
@@ -8,12 +9,12 @@ generate:
 .PHONY: build
 ## build: Build app
 build: generate
-	go build -o .build/app ./cmd/lyco
+	go build -o .build/$(BIN) ./cmd/lyco
 
 .PHONY: run
 ## run: Run app
 run: build
-	.build/app
+	.build/$(BIN)
 
 .PHONY: help
 help: Makefile
