@@ -2,6 +2,7 @@ package task
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -37,10 +38,12 @@ type (
 		Pause() error
 		Resume(at time.Time) error
 		Stop() error
+		Finish() error
 		CanStart() bool
 		CanPause() bool
 		CanResume() bool
 		CanStop() bool
+		CanFinish() bool
 	}
 
 	task struct {
@@ -72,15 +75,6 @@ func NewTaskWithValues(
 	return &task{name, duration, startedAt, elapsed, status}
 }
 
-func NewTaskWithElapsed(name Name, d Duration, elapsed Elapsed) Task {
-	return &task{
-		name:     name,
-		duration: d,
-		elapsed:  elapsed,
-		status:   NewStatus(TaskStatusNone),
-	}
-}
-
 func (t *task) Name() Name {
 	return t.name
 }
@@ -103,7 +97,7 @@ func (t *task) Status() Status {
 
 func (t *task) Start(at time.Time) error {
 	if !t.CanStart() {
-		return NewInvalidStatusTransition(fmt.Sprintf("❗Can't Start from task status:%v", t.status.Value()))
+		return errors.New(fmt.Sprintf("❗cannot start task:%v", t))
 	}
 	if err := t.status.Update(NewStatus(TaskStatusRunning)); err != nil {
 		return err
@@ -124,7 +118,7 @@ func (t *task) Start(at time.Time) error {
 
 func (t *task) Pause() error {
 	if !t.CanPause() {
-		return NewInvalidStatusTransition(fmt.Sprintf("❗Can't Pause from task status:%v", t.status.Value()))
+		return errors.New(fmt.Sprintf("❗cannot pause task:%v", t))
 	}
 	if err := t.status.Update(NewStatus(TaskStatusPaused)); err != nil {
 		return err
@@ -140,15 +134,18 @@ func (t *task) Pause() error {
 		t.startedAt,
 		t.duration,
 		t.elapsed,
+		t.status,
 	))
 	return nil
 }
 
 func (t *task) Resume(at time.Time) error {
 	if !t.CanResume() {
-		return NewInvalidStatusTransition(fmt.Sprintf("❗Can't Resume from task status:%v", t.status.Value()))
+		return errors.New(fmt.Sprintf("❗cannot resume task:%v", t))
 	}
-	t.status.Update(NewStatus(TaskStatusRunning))
+	if err := t.status.Update(NewStatus(TaskStatusRunning)); err != nil {
+		return err
+	}
 	startedAt, err := NewStartedAt(at.UnixNano())
 	if err != nil {
 		return err
@@ -159,12 +156,18 @@ func (t *task) Resume(at time.Time) error {
 		t.startedAt,
 		t.duration,
 		t.elapsed,
+		t.status,
 	))
 	return nil
 }
 
 func (t *task) Stop() error {
-	t.status.Update(NewStatus(TaskStatusStopped))
+	if !t.CanStop() {
+		return errors.New(fmt.Sprintf("❗cannot stop task:%v", t))
+	}
+	if err := t.status.Update(NewStatus(TaskStatusStopped)); err != nil {
+		return err
+	}
 	now := time.Now().UnixNano()
 	elapsed, err := NewElapsed(t.elapsed.Value() + now - t.startedAt.Value())
 	if err != nil {
@@ -176,6 +179,30 @@ func (t *task) Stop() error {
 		t.startedAt,
 		t.duration,
 		t.elapsed,
+		t.status,
+	))
+	return nil
+}
+
+func (t *task) Finish() error {
+	if !t.CanFinish() {
+		return errors.New(fmt.Sprintf("❗cannot finish task:%v", t))
+	}
+	if err := t.status.Update(NewStatus(TaskStatusFinished)); err != nil {
+		return err
+	}
+	now := time.Now().UnixNano()
+	elapsed, err := NewElapsed(t.elapsed.Value() + now - t.startedAt.Value())
+	if err != nil {
+		return err
+	}
+	t.elapsed = elapsed
+	event.DefaultPublisher.Publish(NewTaskFinished(
+		t.name,
+		t.startedAt,
+		t.duration,
+		t.elapsed,
+		t.status,
 	))
 	return nil
 }
@@ -220,6 +247,12 @@ func (t *task) CanResume() bool {
 
 func (t *task) CanStop() bool {
 	return t.hasAvailableAction(AvailableActionStop)
+}
+
+func (t *task) CanFinish() bool {
+	now := time.Now().UnixNano()
+	elapsed := t.elapsed.Value() + now - t.startedAt.Value()
+	return elapsed >= t.duration.Value()
 }
 
 func (t *task) MarshalJSON() ([]byte, error) {

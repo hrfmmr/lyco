@@ -14,6 +14,7 @@ type (
 		StartedAt() StartedAt
 		Duration() Duration
 		Elapsed() Elapsed
+		Status() Status
 	}
 
 	taskStopped struct {
@@ -21,15 +22,17 @@ type (
 		startedAt StartedAt
 		duration  Duration
 		elapsed   Elapsed
+		status    Status
 	}
 )
 
-func NewTaskStopped(name Name, startedAt StartedAt, duration Duration, elapsed Elapsed) TaskStopped {
+func NewTaskStopped(name Name, startedAt StartedAt, duration Duration, elapsed Elapsed, status Status) TaskStopped {
 	return &taskStopped{
 		name,
 		startedAt,
 		duration,
 		elapsed,
+		status,
 	}
 }
 
@@ -40,14 +43,20 @@ func (e *taskStopped) Type() event.EventType {
 func (e *taskStopped) Name() Name {
 	return e.name
 }
+
 func (e *taskStopped) StartedAt() StartedAt {
 	return e.startedAt
 }
+
 func (e *taskStopped) Duration() Duration {
 	return e.duration
 }
+
 func (e *taskStopped) Elapsed() Elapsed {
 	return e.elapsed
+}
+func (e *taskStopped) Status() Status {
+	return e.status
 }
 
 func (e *taskStopped) MarshalJSON() ([]byte, error) {
@@ -57,12 +66,14 @@ func (e *taskStopped) MarshalJSON() ([]byte, error) {
 		StartedAt string `json:"started_at"`
 		Duration  string `json:"duration"`
 		Elapsed   string `json:"elapsed"`
+		Status    string `json:"status"`
 	}{
 		e.Type().String(),
 		e.name.Value(),
 		time.Unix(0, e.startedAt.Value()).String(),
 		time.Duration(e.duration.Value()).String(),
 		time.Duration(e.elapsed.Value()).String(),
+		string(e.status.Value()),
 	})
 }
 

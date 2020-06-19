@@ -8,7 +8,7 @@ import (
 )
 
 type (
-	TaskResumed interface {
+	TaskFinished interface {
 		event.Event
 		Name() Name
 		StartedAt() StartedAt
@@ -17,7 +17,7 @@ type (
 		Status() Status
 	}
 
-	taskResumed struct {
+	taskFinished struct {
 		name      Name
 		startedAt StartedAt
 		duration  Duration
@@ -26,8 +26,8 @@ type (
 	}
 )
 
-func NewTaskResumed(name Name, startedAt StartedAt, duration Duration, elapsed Elapsed, status Status) TaskResumed {
-	return &taskResumed{
+func NewTaskFinished(name Name, startedAt StartedAt, duration Duration, elapsed Elapsed, status Status) TaskFinished {
+	return &taskFinished{
 		name,
 		startedAt,
 		duration,
@@ -36,31 +36,31 @@ func NewTaskResumed(name Name, startedAt StartedAt, duration Duration, elapsed E
 	}
 }
 
-func (e *taskResumed) Type() event.EventType {
-	return event.EventTypeTaskResumed
+func (e *taskFinished) Type() event.EventType {
+	return event.EventTypeTaskFinished
 }
 
-func (e *taskResumed) Name() Name {
+func (e *taskFinished) Name() Name {
 	return e.name
 }
 
-func (e *taskResumed) StartedAt() StartedAt {
+func (e *taskFinished) StartedAt() StartedAt {
 	return e.startedAt
 }
 
-func (e *taskResumed) Duration() Duration {
+func (e *taskFinished) Duration() Duration {
 	return e.duration
 }
 
-func (e *taskResumed) Elapsed() Elapsed {
+func (e *taskFinished) Elapsed() Elapsed {
 	return e.elapsed
 }
 
-func (e *taskResumed) Status() Status {
+func (e *taskFinished) Status() Status {
 	return e.status
 }
 
-func (e *taskResumed) MarshalJSON() ([]byte, error) {
+func (e *taskFinished) MarshalJSON() ([]byte, error) {
 	return json.Marshal(struct {
 		Type      string `json:"type"`
 		Name      string `json:"name"`
@@ -78,7 +78,7 @@ func (e *taskResumed) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (e *taskResumed) String() string {
+func (e *taskFinished) String() string {
 	b, _ := json.Marshal(e)
 	return string(b)
 }

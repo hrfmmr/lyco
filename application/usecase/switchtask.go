@@ -75,7 +75,7 @@ func (u *SwitchTaskUseCase) Execute(arg interface{}) error {
 		return err
 	}
 	u.taskRepository.Save(t)
-	d, err = timer.NewDuration(t.Duration().Value() - t.Elapsed().Value())
+	d, err = timer.NewDuration(t.Duration().Value())
 	if err != nil {
 		return err
 	}

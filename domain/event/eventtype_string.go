@@ -13,10 +13,11 @@ func _() {
 	_ = x[EventTypeTaskPaused-8]
 	_ = x[EventTypeTaskResumed-16]
 	_ = x[EventTypeTaskStopped-32]
-	_ = x[EventTypeBreaksStarted-64]
-	_ = x[EventTypeBreaksEnded-128]
-	_ = x[EventTypeTimerTicked-256]
-	_ = x[EventTypeTimerFinished-512]
+	_ = x[EventTypeTaskFinished-64]
+	_ = x[EventTypeBreaksStarted-128]
+	_ = x[EventTypeBreaksEnded-256]
+	_ = x[EventTypeTimerTicked-512]
+	_ = x[EventTypeTimerFinished-1024]
 }
 
 const (
@@ -25,10 +26,11 @@ const (
 	_EventType_name_2 = "EventTypeTaskPaused"
 	_EventType_name_3 = "EventTypeTaskResumed"
 	_EventType_name_4 = "EventTypeTaskStopped"
-	_EventType_name_5 = "EventTypeBreaksStarted"
-	_EventType_name_6 = "EventTypeBreaksEnded"
-	_EventType_name_7 = "EventTypeTimerTicked"
-	_EventType_name_8 = "EventTypeTimerFinished"
+	_EventType_name_5 = "EventTypeTaskFinished"
+	_EventType_name_6 = "EventTypeBreaksStarted"
+	_EventType_name_7 = "EventTypeBreaksEnded"
+	_EventType_name_8 = "EventTypeTimerTicked"
+	_EventType_name_9 = "EventTypeTimerFinished"
 )
 
 func (i EventType) String() string {
@@ -51,6 +53,8 @@ func (i EventType) String() string {
 		return _EventType_name_7
 	case i == 512:
 		return _EventType_name_8
+	case i == 1024:
+		return _EventType_name_9
 	default:
 		return "EventType(" + strconv.FormatInt(int64(i), 10) + ")"
 	}

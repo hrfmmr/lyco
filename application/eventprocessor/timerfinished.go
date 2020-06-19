@@ -10,7 +10,7 @@ import (
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/domain/timer"
 	"github.com/hrfmmr/lyco/utils/notifier"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 //TODO: make configurable
@@ -43,12 +43,20 @@ func (p *TimerFinishedEventProcessor) EventType() event.EventType {
 func (p *TimerFinishedEventProcessor) HandleEvent(e event.Event) {
 	ev, ok := e.(timer.TimerFinished)
 	if !ok {
-		logrus.Errorf("❗[TimerFinishedEventProcessor] got unexpected event:%T, expecting: task.TimerFinished", e)
+		log.Errorf("❗[TimerFinishedEventProcessor] got unexpected event:%T, expecting: task.TimerFinished", e)
 		return
 	}
 	switch ev.Mode() {
 	case timer.TimerModeTask:
 		//TODO: responsibility segregation
+		t := p.taskRepository.GetCurrent()
+		if t.CanFinish() {
+			t.Finish()
+		} else {
+			log.Warnf("⚠ task:%v should be able to finish", t)
+		}
+		p.taskRepository.Save(t)
+
 		p.taskFinCount++
 		var b breaks.Breaks
 		if p.taskFinCount%longBreaksPerPoms == 0 {
@@ -57,12 +65,12 @@ func (p *TimerFinishedEventProcessor) HandleEvent(e event.Event) {
 			b = breaks.ShortDefault()
 		}
 		if err := b.Start(); err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 		d, err := timer.NewDuration(b.Duration().Value())
 		if err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 		p.pomodorotimer.Start(timer.TimerModeBreaks, d)
@@ -75,13 +83,13 @@ func (p *TimerFinishedEventProcessor) HandleEvent(e event.Event) {
 		t := p.taskRepository.GetCurrent()
 		t = task.NewTask(t.Name(), t.Duration())
 		if err := t.Start(time.Now()); err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 		p.taskRepository.Save(t)
 		d, err := timer.NewDuration(t.Duration().Value())
 		if err != nil {
-			logrus.Error(err)
+			log.Error(err)
 			return
 		}
 		p.pomodorotimer.Start(timer.TimerModeTask, d)

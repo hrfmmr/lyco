@@ -9,6 +9,7 @@ const (
 	EventTypeTaskPaused
 	EventTypeTaskResumed
 	EventTypeTaskStopped
+	EventTypeTaskFinished
 	EventTypeBreaksStarted
 	EventTypeBreaksEnded
 	EventTypeTimerTicked
