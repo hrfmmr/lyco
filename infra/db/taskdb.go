@@ -2,7 +2,6 @@ package db
 
 import (
 	"github.com/hrfmmr/lyco/domain/task"
-	"github.com/sirupsen/logrus"
 )
 
 type taskRepository struct {
@@ -18,6 +17,5 @@ func (r *taskRepository) GetCurrent() task.Task {
 }
 
 func (r *taskRepository) Save(t task.Task) {
-	logrus.Infof("🐛taskRepository#Save t:%v", t)
 	r.t = t
 }

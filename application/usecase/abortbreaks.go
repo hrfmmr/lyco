@@ -6,7 +6,6 @@ import (
 	"github.com/hrfmmr/lyco/application/appstate"
 	"github.com/hrfmmr/lyco/domain/task"
 	"github.com/hrfmmr/lyco/domain/timer"
-	"github.com/sirupsen/logrus"
 )
 
 type AbortBreaksUseCase struct {
@@ -39,9 +38,7 @@ func (u *AbortBreaksUseCase) Execute(arg interface{}) error {
 	u.appState.SetBreaks(nil)
 	u.pomodorotimer.Stop()
 	t := u.taskRepository.GetCurrent()
-	logrus.Infof("🐛current task:%v", t)
 	t = task.NewTask(t.Name(), t.Duration())
-	logrus.Infof("🐛new task:%v", t)
 	u.taskRepository.Save(t)
 	return nil
 }

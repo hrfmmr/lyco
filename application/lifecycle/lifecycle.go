@@ -16,5 +16,5 @@ func (h *LifecycleEventHub) EventType() event.EventType {
 }
 
 func (h *LifecycleEventHub) HandleEvent(e event.Event) {
-	logrus.Infof("👀 occurred event:%v", e)
+	logrus.Debugf("👀 occurred event:%v", e)
 }

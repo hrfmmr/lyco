@@ -84,7 +84,7 @@ func UnhandledInput(app gowid.IApp, event interface{}) bool {
 	handled := false
 	if evk, ok := event.(*tcell.EventKey); ok {
 		if evk.Key() == tcell.KeyCtrlC {
-			logrus.Info("⌨ui#UnhandledInput::case tcell.KeyCtrlC")
+			logrus.Debug("⌨ C-c")
 			handled = true
 			msg := text.New("Do you want to quit?")
 			yesno := dialog.New(
@@ -110,7 +110,7 @@ func handleTaskKeyInput(app gowid.IApp, k *tcell.EventKey) (handled bool) {
 	switch k.Key() {
 	case tcell.KeyCtrlE:
 		handled = true
-		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlE")
+		logrus.Debug("⌨ C-e")
 		var buf bytes.Buffer
 		_, err := io.Copy(&buf, taskText)
 		if err != nil {
@@ -120,19 +120,19 @@ func handleTaskKeyInput(app gowid.IApp, k *tcell.EventKey) (handled bool) {
 		onStartTask <- s
 	case tcell.KeyCtrlP:
 		handled = true
-		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlP")
+		logrus.Debug("⌨ C-p")
 		onPauseTask <- struct{}{}
 	case tcell.KeyCtrlR:
 		handled = true
-		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlR")
+		logrus.Debug("⌨ C-r")
 		onResumeTask <- struct{}{}
 	case tcell.KeyCtrlQ:
 		handled = true
-		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlQ")
+		logrus.Debug("⌨ C-q")
 		onStopTask <- struct{}{}
 	case tcell.KeyCtrlS:
 		handled = true
-		logrus.Info("⌨ui#handleTaskKeyInput::case tcell.KeyCtrlS")
+		logrus.Debug("⌨ C-s")
 		switchTask(app)
 	}
 	return
@@ -143,7 +143,7 @@ func handleBreaksKeyInput(app gowid.IApp, k *tcell.EventKey) (handled bool) {
 	switch k.Key() {
 	case tcell.KeyCtrlQ:
 		handled = true
-		logrus.Info("⌨ui#handleBreaksKeyInput::case tcell.KeyCtrlQ")
+		logrus.Debug("⌨ C-q")
 		onAbortBreaks <- struct{}{}
 	}
 	return
@@ -190,14 +190,13 @@ func showTaskInputDialog(app gowid.IApp, bootstrap bool) {
 			switch ev.Key() {
 			case tcell.KeyEnter:
 				handled = true
-				logrus.Infof("🐛 SwitchTask::case tcell.KeyEnter")
+				logrus.Debug("⌨ Enter")
 				var buf bytes.Buffer
 				_, err := io.Copy(&buf, taskInputEditor)
 				if err != nil {
 					logrus.Fatal(err)
 				}
 				s := buf.String()
-				logrus.Infof("🐛 SwitchTask::case tcell.KeyEnter - 📝editor buf:%v", s)
 				taskInputDialog.Close(app)
 				switch bootstrap {
 				case true:
@@ -223,7 +222,7 @@ func UpdatePomodoro(app gowid.IApp, state dto.PomodoroState) {
 	case dto.PomodoroModeBreaks:
 		currentMode = modeBreaks
 	}
-	logrus.Infof("🔃ui#UpdateTask2 state:%v", state)
+	logrus.Debugf("🔃 update state:%v", state)
 	keymaps := []*keymap{}
 	for _, action := range state.AvailableActions() {
 		keymaps = append(keymaps, convertTaskActionToKeymap(action))

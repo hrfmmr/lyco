@@ -4,7 +4,6 @@ import (
 	"github.com/hrfmmr/lyco/application/dto"
 	"github.com/hrfmmr/lyco/application/usecase"
 	"github.com/hrfmmr/lyco/domain/task"
-	"github.com/sirupsen/logrus"
 )
 
 type TaskStore interface {
@@ -28,7 +27,6 @@ func NewTaskStore(taskRepository task.Repository) TaskStore {
 }
 
 func (s *taskStore) RecvPayload(p usecase.Payload) {
-	logrus.Infof("🐛taskStore#RecvPayload p:%v", p)
 	if t := s.taskRepository.GetCurrent(); t != nil {
 		newstate := dto.NewPomodoroStateWithTask(t)
 		s.state = newstate
