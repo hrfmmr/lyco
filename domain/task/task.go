@@ -62,6 +62,16 @@ func NewTask(name Name, d Duration) Task {
 	}
 }
 
+func NewTaskWithValues(
+	name Name,
+	duration Duration,
+	startedAt StartedAt,
+	elapsed Elapsed,
+	status Status,
+) Task {
+	return &task{name, duration, startedAt, elapsed, status}
+}
+
 func NewTaskWithElapsed(name Name, d Duration, elapsed Elapsed) Task {
 	return &task{
 		name:     name,

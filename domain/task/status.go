@@ -1,6 +1,7 @@
 package task
 
 import (
+	"errors"
 	"fmt"
 )
 
@@ -25,6 +26,22 @@ type status struct {
 
 func NewStatus(s StatusValue) Status {
 	return &status{s}
+}
+
+func NewStatusFromString(s string) (Status, error) {
+	switch s {
+	case string(TaskStatusNone):
+		return NewStatus(TaskStatusNone), nil
+	case string(TaskStatusRunning):
+		return NewStatus(TaskStatusRunning), nil
+	case string(TaskStatusPaused):
+		return NewStatus(TaskStatusPaused), nil
+	case string(TaskStatusStopped):
+		return NewStatus(TaskStatusStopped), nil
+	case string(TaskStatusFinished):
+		return NewStatus(TaskStatusFinished), nil
+	}
+	return nil, errors.New(fmt.Sprintf("❗got invalid status:%s", s))
 }
 
 func (s *status) Value() StatusValue {
