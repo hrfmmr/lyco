@@ -43,9 +43,9 @@ func init() {
 }
 
 func newOptsParser(opt *cli.Lyco) *flags.Parser {
-	p := flags.NewParser(opt, flags.HelpFlag|flags.PrintErrors|flags.PassDoubleDash)
+	p := flags.NewParser(opt, flags.PassDoubleDash|flags.PrintErrors)
 	p.Name = "lyco"
-	p.Usage = `- A terminal user interface for pomodoro technique🍅`
+	p.Usage = "[OPTIONS]"
 	return p
 }
 
@@ -54,18 +54,6 @@ func main() {
 }
 
 func cmain() int {
-	var opts cli.Lyco
-	parser := newOptsParser(&opts)
-	_, err := parser.Parse()
-
-	if err != nil {
-		if e, ok := err.(*flags.Error); ok && e.Type == flags.ErrHelp {
-			return 0
-		}
-		fmt.Fprintf(os.Stderr, "Command-line error:%v\n\n", err)
-		return 1
-	}
-
 	stdConf := configdir.New("", "lyco")
 	dirs := stdConf.QueryFolders(configdir.Cache)
 	if err := dirs[0].CreateParentDir("dummy"); err != nil {
@@ -84,6 +72,25 @@ func cmain() int {
 	//defer logfd.Close()
 	log.SetOutput(logfd)
 	log.SetReportCaller(true)
+
+	var opts cli.Lyco
+	parser := newOptsParser(&opts)
+	_, err = parser.Parse()
+
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Command-line error:%v\n\n", err)
+		return 1
+	}
+
+	if opts.Help {
+		cli.WriteHelp(parser, os.Stdout)
+		return 0
+	}
+
+	if opts.Debug {
+		log.SetLevel(log.DebugLevel)
+		log.Debug("🐛Starting debug mode")
+	}
 
 	app, err := ui.Build()
 	if err != nil {
