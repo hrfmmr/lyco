@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/hrfmmr/lyco/application/dto"
 	"github.com/hrfmmr/lyco/application/usecase"
+	"github.com/hrfmmr/lyco/config"
 )
 
 type MetricsStore interface {
@@ -16,10 +17,10 @@ type metricsStore struct {
 	state      dto.MetricsState
 }
 
-func NewMetricsStore() MetricsStore {
+func NewMetricsStore(cfg *config.Config) MetricsStore {
 	return &metricsStore{
 		make(chan Store, 1),
-		dto.NewInitialMetricsState(),
+		dto.NewInitialMetricsState(cfg),
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"github.com/hrfmmr/lyco/application/eventprocessor"
 	"github.com/hrfmmr/lyco/application/store"
 	"github.com/hrfmmr/lyco/application/usecase"
+	"github.com/hrfmmr/lyco/config"
 	"github.com/hrfmmr/lyco/domain/entry"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
@@ -18,13 +19,14 @@ import (
 )
 
 var (
+	cfg             = config.NewConfig()
 	pomodorotimer   = timer.NewTimer()
 	taskRepository  = db.NewTaskRepository()
 	entryRepository = db.NewEntryRepository()
 	taskStore       = store.NewTaskStore(
 		taskRepository,
 	)
-	metricsStore = store.NewMetricsStore()
+	metricsStore = store.NewMetricsStore(cfg)
 	storeGroup   = store.NewStoreGroup(
 		taskStore,
 		metricsStore,
@@ -60,6 +62,10 @@ func provideTaskService() task.TaskService {
 			ProvideTaskRepository,
 		),
 	)
+}
+
+func ProvideConfig() *config.Config {
+	return cfg
 }
 
 func ProvideAppContext() application.AppContext {
@@ -161,6 +167,7 @@ func InitTimerFinishedEventProcessor() *eventprocessor.TimerFinishedEventProcess
 	panic(
 		wire.Build(
 			eventprocessor.NewTimerFinishedEventProcessor,
+			ProvideConfig,
 			ProvideAppContext,
 			ProvideTaskRepository,
 			provideTimer,

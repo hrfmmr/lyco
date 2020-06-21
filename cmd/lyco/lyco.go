@@ -22,6 +22,7 @@ import (
 )
 
 var (
+	cfg                         = di.ProvideConfig()
 	appContext                  = di.ProvideAppContext()
 	startTaskUseCase            = di.InitStartTaskUseCase()
 	pauseTaskUseCase            = di.InitPauseTaskUseCase()
@@ -94,33 +95,33 @@ func cmain() int {
 	}
 
 	if len(opts.PomodoroDuration) > 0 {
-		log.Debugf("🐛 opts.PomodoroDuration:%s", opts.PomodoroDuration)
-		_, err := time.ParseDuration(opts.PomodoroDuration)
+		d, err := time.ParseDuration(opts.PomodoroDuration)
+		log.Debugf("🐛 opts.PomodoroDuration:%s", d)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not parse relative time for pomodoro duration\n\n")
 			return 1
 		}
-		//TODO: Update Config.PomodoroDuration
+		cfg.PomodoroDuration = &d
 	}
 
 	if len(opts.ShortBreaksDuration) > 0 {
-		log.Debugf("🐛 opts.ShortBreaksDuration:%s", opts.ShortBreaksDuration)
-		_, err := time.ParseDuration(opts.ShortBreaksDuration)
+		d, err := time.ParseDuration(opts.ShortBreaksDuration)
+		log.Debugf("🐛 opts.ShortBreaksDuration:%s", d)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not parse relative time for short-breaks duration\n\n")
 			return 1
 		}
-		//TODO: Update Config.ShortBreaksDuration
+		cfg.ShortBreaksDuration = &d
 	}
 
 	if len(opts.LongBreaksDuration) > 0 {
-		log.Debugf("🐛 opts.LongBreaksDuration:%s", opts.LongBreaksDuration)
-		_, err := time.ParseDuration(opts.LongBreaksDuration)
+		d, err := time.ParseDuration(opts.LongBreaksDuration)
+		log.Debugf("🐛 opts.LongBreaksDuration:%s", d)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Could not parse relative time for long-breaks duration\n\n")
 			return 1
 		}
-		//TODO: Update Config.LongBreaksDuration
+		cfg.LongBreaksDuration = &d
 	}
 
 	app, err := ui.Build()
@@ -139,7 +140,13 @@ func cmain() int {
 				ui.UpdatePomodoro(app, sg.TaskStore().GetState())
 				ui.UpdateMetrics(app, sg.MetricsStore().GetState())
 			case s := <-ui.OnStartTask():
-				p := usecase.NewStartTaskPayload(s, task.DefaultDuration)
+				var d time.Duration
+				if cfg.PomodoroDuration != nil {
+					d = *cfg.PomodoroDuration
+				} else {
+					d = task.DefaultDuration
+				}
+				p := usecase.NewStartTaskPayload(s, d)
 				if err := appContext.UseCase(startTaskUseCase).Execute(p); err != nil {
 					return err
 				}
@@ -156,7 +163,13 @@ func cmain() int {
 					return err
 				}
 			case s := <-ui.OnSwitchTask():
-				p := usecase.NewSwitchTaskPayload(s, task.DefaultDuration)
+				var d time.Duration
+				if cfg.PomodoroDuration != nil {
+					d = *cfg.PomodoroDuration
+				} else {
+					d = task.DefaultDuration
+				}
+				p := usecase.NewSwitchTaskPayload(s, d)
 				if err := appContext.UseCase(switchTaskUseCase).Execute(p); err != nil {
 					return err
 				}

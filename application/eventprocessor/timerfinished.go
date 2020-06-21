@@ -5,6 +5,7 @@ import (
 
 	"github.com/hrfmmr/lyco/application"
 	"github.com/hrfmmr/lyco/application/dto"
+	"github.com/hrfmmr/lyco/config"
 	"github.com/hrfmmr/lyco/domain/breaks"
 	"github.com/hrfmmr/lyco/domain/event"
 	"github.com/hrfmmr/lyco/domain/task"
@@ -17,6 +18,7 @@ import (
 const longBreaksPerPoms = 4
 
 type TimerFinishedEventProcessor struct {
+	cfg            *config.Config
 	appContext     application.AppContext
 	taskRepository task.Repository
 	pomodorotimer  timer.Timer
@@ -24,11 +26,13 @@ type TimerFinishedEventProcessor struct {
 }
 
 func NewTimerFinishedEventProcessor(
+	cfg *config.Config,
 	appContext application.AppContext,
 	taskRepository task.Repository,
 	pomodorotimer timer.Timer,
 ) *TimerFinishedEventProcessor {
 	return &TimerFinishedEventProcessor{
+		cfg,
 		appContext,
 		taskRepository,
 		pomodorotimer,
@@ -43,7 +47,7 @@ func (p *TimerFinishedEventProcessor) EventType() event.EventType {
 func (p *TimerFinishedEventProcessor) HandleEvent(e event.Event) {
 	ev, ok := e.(timer.TimerFinished)
 	if !ok {
-		log.Errorf("❗[TimerFinishedEventProcessor] got unexpected event:%T, expecting: task.TimerFinished", e)
+		log.Errorf("❗got unexpected event:%T, expecting: task.TimerFinished", e)
 		return
 	}
 	switch ev.Mode() {
@@ -60,9 +64,27 @@ func (p *TimerFinishedEventProcessor) HandleEvent(e event.Event) {
 		p.taskFinCount++
 		var b breaks.Breaks
 		if p.taskFinCount%longBreaksPerPoms == 0 {
-			b = breaks.LongDefault()
+			if p.cfg.LongBreaksDuration != nil {
+				d, err := breaks.NewDuration(int64(*p.cfg.LongBreaksDuration))
+				if err != nil {
+					log.Errorf("❗%v", err)
+					return
+				}
+				b = breaks.NewBreaks(d)
+			} else {
+				b = breaks.LongDefault()
+			}
 		} else {
-			b = breaks.ShortDefault()
+			if p.cfg.ShortBreaksDuration != nil {
+				d, err := breaks.NewDuration(int64(*p.cfg.ShortBreaksDuration))
+				if err != nil {
+					log.Errorf("❗%v", err)
+					return
+				}
+				b = breaks.NewBreaks(d)
+			} else {
+				b = breaks.ShortDefault()
+			}
 		}
 		if err := b.Start(); err != nil {
 			log.Error(err)

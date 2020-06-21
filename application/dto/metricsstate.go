@@ -5,6 +5,7 @@ import (
 
 	"github.com/elliotchance/orderedmap"
 
+	"github.com/hrfmmr/lyco/config"
 	"github.com/hrfmmr/lyco/domain/entry"
 	"github.com/hrfmmr/lyco/domain/task"
 )
@@ -56,10 +57,16 @@ func (e *metricsEntry) PomsCount() uint64 {
 	return uint64(int64(e.Elapsed()) / e.duration)
 }
 
-func NewInitialMetricsState() MetricsState {
+func NewInitialMetricsState(cfg *config.Config) MetricsState {
+	var d time.Duration
+	if cfg.PomodoroDuration != nil {
+		d = *cfg.PomodoroDuration
+	} else {
+		d = task.DefaultDuration
+	}
 	return &metricsState{
 		[]MetricsEntry{},
-		int64(task.DefaultDuration),
+		int64(d),
 	}
 }
 
