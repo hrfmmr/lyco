@@ -14,8 +14,8 @@ import (
 	"github.com/gcla/gowid/widgets/pile"
 	"github.com/gcla/gowid/widgets/text"
 	"github.com/gdamore/tcell"
-	"github.com/hrfmmr/lyco/appkeys"
 	"github.com/hrfmmr/lyco/application/dto"
+	"github.com/hrfmmr/lyco/ui/appkeys"
 	"github.com/sirupsen/logrus"
 )
 
