@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/gcla/gowid"
 	"github.com/hrfmmr/lyco/application/lifecycle"
@@ -90,6 +91,36 @@ func cmain() int {
 	if opts.Debug {
 		log.SetLevel(log.DebugLevel)
 		log.Debug("🐛Starting debug mode")
+	}
+
+	if len(opts.PomodoroDuration) > 0 {
+		log.Debugf("🐛 opts.PomodoroDuration:%s", opts.PomodoroDuration)
+		_, err := time.ParseDuration(opts.PomodoroDuration)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not parse relative time for pomodoro duration\n\n")
+			return 1
+		}
+		//TODO: Update Config.PomodoroDuration
+	}
+
+	if len(opts.ShortBreaksDuration) > 0 {
+		log.Debugf("🐛 opts.ShortBreaksDuration:%s", opts.ShortBreaksDuration)
+		_, err := time.ParseDuration(opts.ShortBreaksDuration)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not parse relative time for short-breaks duration\n\n")
+			return 1
+		}
+		//TODO: Update Config.ShortBreaksDuration
+	}
+
+	if len(opts.LongBreaksDuration) > 0 {
+		log.Debugf("🐛 opts.LongBreaksDuration:%s", opts.LongBreaksDuration)
+		_, err := time.ParseDuration(opts.LongBreaksDuration)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Could not parse relative time for long-breaks duration\n\n")
+			return 1
+		}
+		//TODO: Update Config.LongBreaksDuration
 	}
 
 	app, err := ui.Build()
