@@ -9,7 +9,7 @@ type (
 	taskRecord struct {
 		name      string
 		duration  int64
-		startedAt int64
+		startedAt *int64
 		elapsed   int64
 		status    string
 	}
@@ -19,7 +19,7 @@ type (
 	}
 )
 
-func NewTaskRecord(name string, duration, startedAt, elapsed int64, status string) *taskRecord {
+func NewTaskRecord(name string, duration int64, startedAt *int64, elapsed int64, status string) *taskRecord {
 	return &taskRecord{name, duration, startedAt, elapsed, status}
 }
 
@@ -52,9 +52,12 @@ func taskRecordToModel(r *taskRecord) (task.Task, error) {
 	if err != nil {
 		return nil, err
 	}
-	startedAt, err := task.NewStartedAt(r.startedAt)
-	if err != nil {
-		return nil, err
+	var startedAt task.StartedAt
+	if r.startedAt != nil {
+		startedAt, err = task.NewStartedAt(*r.startedAt)
+		if err != nil {
+			return nil, err
+		}
 	}
 	elapsed, err := task.NewElapsed(r.elapsed)
 	if err != nil {
@@ -68,10 +71,15 @@ func taskRecordToModel(r *taskRecord) (task.Task, error) {
 }
 
 func taskModelToRecord(t task.Task) *taskRecord {
+	var startedAt *int64
+	if t.StartedAt() != nil {
+		v := t.StartedAt().Value()
+		startedAt = &v
+	}
 	return NewTaskRecord(
 		t.Name().Value(),
 		t.Duration().Value(),
-		t.StartedAt().Value(),
+		startedAt,
 		t.Elapsed().Value(),
 		string(t.Status().Value()),
 	)
