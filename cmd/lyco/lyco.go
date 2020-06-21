@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime/debug"
 	"time"
 
 	"github.com/gcla/gowid"
@@ -132,6 +133,15 @@ func cmain() int {
 	var g errgroup.Group
 	finCh := make(chan struct{}, 1)
 	g.Go(func() error {
+		defer func() {
+			if e := recover(); e != nil {
+				app.Quit()
+				t := time.NewTicker(time.Second)
+				<-t.C
+				fmt.Fprintf(os.Stderr, "Unexpected error occurred...\nSee %s for more details\n\n", logfile)
+				log.Fatalf("😇 panic:  %v", string(debug.Stack()))
+			}
+		}()
 		for {
 			select {
 			case <-finCh:
