@@ -3,6 +3,12 @@ A terminal user interface for pomodoro technique🍅
 
 ![lyco](https://user-images.githubusercontent.com/4639852/85227062-c3c4f800-b415-11ea-96dc-dbb1eb1ffeaa.gif)
 
+## Installation
+
+```bash
+GO111MODULE=off go get github.com/hrfmmr/lyco/cmd/lyco
+```
+
 ## Downloads
 
 Pre-compiled executables are available via [Github Releases](https://github.com/hrfmmr/lyco/releases).
