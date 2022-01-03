@@ -6,6 +6,12 @@ BUILD_LDFLAGS := "-s -w -X main.revision=$(CURRENT_REVISION)"
 GOBIN ?= $(shell go env GOPATH)/bin
 export GO111MODULE=on
 
+.PHONY: bootstrap
+## bootstap: Set up for development
+bootstrap:
+	go install github.com/google/wire/cmd/wire@v0.4.0
+	go install golang.org/x/tools/cmd/stringer@latest
+
 .PHONY: generate
 ## generate: Execute go generate
 generate:
